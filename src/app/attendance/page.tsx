@@ -15,6 +15,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
+import SubscriptionBanner from "@/components/SubscriptionBanner";
 import {
   UserCheck,
   Search,
@@ -163,6 +164,8 @@ export default function AttendancePage() {
           </div>
         </div>
       </header>
+      
+      <SubscriptionBanner />
 
       {/* Hardware / Biometric Ready Banner */}
       <section className="p-4 pb-2">

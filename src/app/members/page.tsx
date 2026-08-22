@@ -17,6 +17,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
+import SubscriptionBanner from "@/components/SubscriptionBanner";
 import {
   Users,
   Search,
@@ -237,6 +238,8 @@ export default function MembersPage() {
           {gym?.name || "Gym"} Directory & Retention
         </p>
       </header>
+      
+      <SubscriptionBanner />
 
       {/* Filter Tabs */}
       <div className="p-4 pb-2">

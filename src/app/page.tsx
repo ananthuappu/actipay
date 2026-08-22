@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { Dumbbell, ArrowRight } from "lucide-react";
+import UpgradeModal from "@/components/UpgradeModal";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -52,22 +54,79 @@ export default function Home() {
         <p className="text-sm text-slate-600 px-4">
           Simple member dues tracking and one-tap WhatsApp payment reminders built for gym owners.
         </p>
+
+        {/* Pricing Cards */}
+        <div className="mt-8 space-y-4 max-w-sm mx-auto">
+          {/* Pro 100 */}
+          <div className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Pro 100</h2>
+            <div className="flex items-baseline gap-1 mb-3">
+              <span className="text-2xl font-extrabold text-slate-900">₹399</span>
+              <span className="text-xs text-slate-500 font-medium">/ month</span>
+            </div>
+            
+            <ul className="space-y-2 mb-4">
+              <li className="flex items-start text-xs text-slate-600">
+                <span className="mr-2 text-green-500">✓</span>
+                Up to 100 members
+              </li>
+              <li className="flex items-start text-xs text-slate-600">
+                <span className="mr-2 text-green-500">✓</span>
+                WhatsApp dues reminders & alerts
+              </li>
+            </ul>
+          </div>
+
+          {/* Pro Unlimited */}
+          <div className="text-left bg-blue-50 border border-blue-200 ring-1 ring-blue-500 rounded-2xl p-5 shadow-xs relative">
+            <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl rounded-tr-xl">
+              BEST VALUE
+            </div>
+            <h2 className="text-lg font-bold text-blue-900 mb-1">Pro Unlimited</h2>
+            <div className="flex items-baseline gap-1 mb-3">
+              <span className="text-2xl font-extrabold text-blue-900">₹799</span>
+              <span className="text-xs text-blue-600 font-medium">/ month</span>
+            </div>
+            
+            <ul className="space-y-2 mb-4">
+              <li className="flex items-start text-xs text-slate-600">
+                <span className="mr-2 text-green-500">✓</span>
+                Unlimited members & payments
+              </li>
+              <li className="flex items-start text-xs text-slate-600">
+                <span className="mr-2 text-green-500">✓</span>
+                All features from Pro 100
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
-      <div className="w-full space-y-3 pb-8">
+      <div className="w-full space-y-3 pb-8 max-w-sm mx-auto">
         <Link
           href="/register"
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-slate-900 font-semibold text-white shadow-md hover:bg-slate-800 transition active:scale-[0.98]"
+        >
+          Try Free Trial (1 Member limit) <ArrowRight className="h-4 w-4" />
+        </Link>
+        <button
+          onClick={() => setIsUpgradeModalOpen(true)}
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-blue-600 font-semibold text-white shadow-md hover:bg-blue-700 transition active:scale-[0.98]"
         >
-          Get Started Free <ArrowRight className="h-4 w-4" />
-        </Link>
+          View Pro Plans
+        </button>
         <Link
           href="/login"
-          className="flex items-center justify-center w-full py-3 rounded-xl border border-slate-300 font-medium text-slate-700 hover:bg-slate-100 transition text-sm"
+          className="flex items-center justify-center w-full py-3 rounded-xl border border-slate-300 font-medium text-slate-700 hover:bg-slate-100 transition text-sm mt-2"
         >
           Already have an account? Sign In
         </Link>
       </div>
+
+      <UpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+      />
     </main>
   );
 }

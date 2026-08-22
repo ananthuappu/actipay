@@ -25,14 +25,16 @@ const auth = getAuth(app);
 
 // Prevent re-initializing Firestore if it already exists across hot reloads
 let db: Firestore;
+const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || "(default)";
+
 if (isNewApp) {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager(),
     }),
-  });
+  }, databaseId);
 } else {
-  db = getFirestore(app);
+  db = getFirestore(app, databaseId);
 }
 
 export { app, auth, db };

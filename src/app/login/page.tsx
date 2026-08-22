@@ -19,11 +19,7 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
 
-    const input = identifier.trim();
-    // If input is purely digits or doesn't contain '@', treat it as a phone alias
-    const isEmail = input.includes("@");
-    const cleanPhone = input.replace(/\D/g, "");
-    const authEmail = isEmail ? input.toLowerCase() : `${cleanPhone}@gympay.app`;
+    const authEmail = identifier.trim().toLowerCase();
 
     try {
       await signInWithEmailAndPassword(auth, authEmail, password);
@@ -55,12 +51,12 @@ export default function LoginPage() {
 
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Mobile Number or Email
+            Email Address
           </label>
           <input
-            type="text"
+            type="email"
             required
-            placeholder="9876543210 or owner@gym.com"
+            placeholder="owner@gym.com"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

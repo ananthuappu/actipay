@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut as fbSignOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { COLLECTIONS } from "@/lib/constants";
 import { GymProfile } from "@/types";
@@ -28,38 +28,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [gym, setGym] = useState<GymProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchGymProfile = async (uid: string) => {
-    try {
-      const gymDocRef = doc(db, COLLECTIONS.GYMS, uid);
-      const gymSnap = await getDoc(gymDocRef);
-      if (gymSnap.exists()) {
-        setGym(gymSnap.data() as GymProfile);
-      } else {
-        setGym(null);
-      }
-    } catch (err) {
-      console.error("Error fetching gym profile:", err);
-      setGym(null);
-    }
-  };
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeGym: () => void;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await fetchGymProfile(currentUser.uid);
+        const gymDocRef = doc(db, COLLECTIONS.GYMS, currentUser.uid);
+        unsubscribeGym = onSnapshot(gymDocRef, (gymSnap) => {
+          if (gymSnap.exists()) {
+            setGym(gymSnap.data() as GymProfile);
+          } else {
+            setGym(null);
+          }
+          setLoading(false);
+        }, (err) => {
+          console.error("Error fetching gym profile:", err);
+          setGym(null);
+          setLoading(false);
+        });
       } else {
         setGym(null);
+        setLoading(false);
+        if (unsubscribeGym) unsubscribeGym();
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeGym) unsubscribeGym();
+    };
   }, []);
 
   const refreshGymData = async () => {
     if (user) {
-      await fetchGymProfile(user.uid);
+      const gymSnap = await getDoc(doc(db, COLLECTIONS.GYMS, user.uid));
+      if (gymSnap.exists()) {
+        setGym(gymSnap.data() as GymProfile);
+      }
     }
   };
 

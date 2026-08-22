@@ -32,8 +32,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // Use email if provided, otherwise create a virtual alias using the phone number
-    const authEmail = email.trim() ? email.trim().toLowerCase() : `${cleanPhone}@gympay.app`;
+    const authEmail = email.trim().toLowerCase();
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, authEmail, password);
@@ -46,6 +45,8 @@ export default function RegisterPage() {
         phone: cleanPhone,
         authEmail: authEmail,
         currency: "INR",
+        isSubscribed: false,
+        subscriptionPlan: "FREE_TRIAL",
         createdAt: new Date().toISOString(),
       };
 
@@ -91,7 +92,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Owner Mobile Number * (Used to login)</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Owner Mobile Number *</label>
           <input
             type="tel"
             required
@@ -103,9 +104,10 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Email (Optional)</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Email * (Used to login)</label>
           <input
             type="email"
+            required
             placeholder="owner@gym.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

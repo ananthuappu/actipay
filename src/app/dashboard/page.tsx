@@ -7,15 +7,23 @@ import { db } from "@/lib/firebase";
 import { COLLECTIONS, PLAN_DURATIONS } from "@/lib/constants";
 import { Member, PlanType, PaymentMode } from "@/types";
 import {
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from "firebase/auth";
+import {
   collection,
   getDocs,
   addDoc,
   doc,
   updateDoc,
+  writeBatch,
   query,
   orderBy,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
+import SubscriptionBanner from "@/components/SubscriptionBanner";
+import UpgradeModal from "@/components/UpgradeModal";
 import {
   Users,
   AlertCircle,
@@ -28,6 +36,8 @@ import {
   Phone,
   Calendar,
   History,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -40,6 +50,16 @@ export default function DashboardPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+  // Upgrade state
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("");
+
+  // Delete Account modal state
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form states for adding member
   const [newFullName, setNewFullName] = useState("");
@@ -258,6 +278,72 @@ export default function DashboardPage() {
     window.open(`https://wa.me/91${member.phone}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  // Complete purge of all gym data and auth account with re-authentication
+  const handleDeleteGymAccount = async () => {
+    if (!user || !user.email) return;
+
+    if (deleteConfirmText.trim().toUpperCase() !== "DELETE") {
+      alert("Please type 'DELETE' to confirm.");
+      return;
+    }
+
+    if (!deletePassword) {
+      alert("Please enter your current password to confirm account deletion.");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      // 1. Re-authenticate user to satisfy Firebase security requirement
+      const credential = EmailAuthProvider.credential(user.email, deletePassword);
+      await reauthenticateWithCredential(user, credential);
+
+      // 2. Cascade Batch Delete all Firestore collections
+      const batch = writeBatch(db);
+
+      // a. Delete all Members
+      const membersSnap = await getDocs(
+        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
+      );
+      membersSnap.forEach((d) => batch.delete(d.ref));
+
+      // b. Delete all Payments
+      const paymentsSnap = await getDocs(
+        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS)
+      );
+      paymentsSnap.forEach((d) => batch.delete(d.ref));
+
+      // c. Delete all Attendance records
+      const attendanceSnap = await getDocs(
+        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE)
+      );
+      attendanceSnap.forEach((d) => batch.delete(d.ref));
+
+      // d. Delete Root Gym Profile Document
+      const gymDocRef = doc(db, COLLECTIONS.GYMS, user.uid);
+      batch.delete(gymDocRef);
+
+      // Commit Firestore batch deletion
+      await batch.commit();
+
+      // 3. Delete Firebase Authentication Account
+      await deleteUser(user);
+
+      // 4. Redirect to home
+      router.push("/");
+    } catch (error: any) {
+      console.error("Error deleting gym account:", error);
+      if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+        alert("Incorrect password. Please verify your password and try again.");
+      } else {
+        alert("Failed to delete account: " + (error.message || "Unknown error"));
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const filteredMembers = members.filter((m) => {
     const status = getStatus(m.nextDueDate).label;
     if (filter === "OVERDUE") return status === "OVERDUE";
@@ -287,14 +373,25 @@ export default function DashboardPage() {
           </h1>
           <p className="text-[11px] text-slate-500 font-medium">Dashboard</p>
         </div>
-        <button
-          onClick={logout}
-          className="p-2 text-slate-500 hover:text-red-600 transition rounded-lg hover:bg-slate-100"
-          title="Sign Out"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setIsDeleteAccountModalOpen(true)}
+            className="p-2 text-slate-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
+            title="Delete Gym Account"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={logout}
+            className="p-2 text-slate-500 hover:text-red-600 transition rounded-lg hover:bg-slate-100"
+            title="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </header>
+
+      <SubscriptionBanner />
 
       {/* Metrics Section */}
       <section className="p-4 grid grid-cols-3 gap-2">
@@ -415,7 +512,21 @@ export default function DashboardPage() {
 
       {/* Floating Action Button (Add Member) */}
       <button
-        onClick={() => setIsAddModalOpen(true)}
+        onClick={() => {
+          if (gym?.isSubscribed !== true && members.length >= 1) {
+            setUpgradeReason(
+              "You have reached the 1-member free trial limit. Upgrade to Pro to add more members."
+            );
+            setIsUpgradeModalOpen(true);
+          } else if (gym?.subscriptionPlan === "PRO_100" && members.length >= 100) {
+            setUpgradeReason(
+              "You have reached the 100-member limit for your plan. Upgrade to Pro Unlimited to add more members."
+            );
+            setIsUpgradeModalOpen(true);
+          } else {
+            setIsAddModalOpen(true);
+          }
+        }}
         className="fixed bottom-20 right-6 z-30 h-14 w-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition active:scale-90"
         title="Add Member"
       >
@@ -643,8 +754,107 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* MODAL: Delete Entire Gym Account */}
+      {isDeleteAccountModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-red-600 font-bold text-base">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Delete Gym Account</span>
+              </div>
+              <button
+                onClick={() => {
+                  setIsDeleteAccountModalOpen(false);
+                  setDeleteConfirmText("");
+                  setDeletePassword("");
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs text-slate-600 leading-relaxed bg-red-50 p-3.5 rounded-xl border border-red-200">
+              <p className="font-bold text-red-800">Permanent Data Loss Warning</p>
+              <p>
+                This action will permanently delete <strong>{gym?.name || "your gym"}</strong>, including:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-red-700">
+                <li>All registered gym members</li>
+                <li>All payment receipts & revenue logs</li>
+                <li>All daily attendance history</li>
+                <li>Your login account</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Current Password:
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Enter your account password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Type <span className="font-bold text-red-600">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  placeholder="DELETE"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold tracking-wider uppercase focus:ring-2 focus:ring-red-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteAccountModalOpen(false);
+                  setDeleteConfirmText("");
+                  setDeletePassword("");
+                }}
+                className="flex-1 py-3 rounded-xl border border-slate-200 font-semibold text-xs text-slate-600 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deleteConfirmText.trim().toUpperCase() !== "DELETE" ||
+                  !deletePassword ||
+                  isDeleting
+                }
+                onClick={handleDeleteGymAccount}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+              >
+                {isDeleting ? "Deleting Everything..." : "Delete Permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Persistent Bottom Navigation */}
       <BottomNav />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        reason={upgradeReason}
+      />
     </div>
   );
 }
