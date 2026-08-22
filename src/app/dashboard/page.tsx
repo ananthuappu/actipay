@@ -368,10 +368,27 @@ export default function DashboardPage() {
       {/* Mobile Sticky Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-xs">
         <div>
-          <h1 className="font-bold text-lg text-slate-900 leading-tight">
-            {gym?.name || "GymPay"}
-          </h1>
-          <p className="text-[11px] text-slate-500 font-medium">Dashboard</p>
+          <div className="flex items-center gap-2">
+            <h1 className="font-bold text-lg text-slate-900 leading-tight">
+              {gym?.name || "GymPay"}
+            </h1>
+            <div className="px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-100 text-amber-700">
+              {gym?.subscriptionPlan === "PRO_UNLIMITED" 
+                ? "Pro Unlimited" 
+                : gym?.subscriptionPlan === "PRO_100" 
+                  ? "Pro 100" 
+                  : "Free Trial"}
+            </div>
+            {gym?.subscriptionPlan === "PRO_100" && (
+              <button 
+                onClick={() => setIsUpgradeModalOpen(true)}
+                className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded shadow-sm hover:bg-blue-700 transition"
+              >
+                Upgrade
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Dashboard</p>
         </div>
         <div className="flex items-center gap-1">
           <button

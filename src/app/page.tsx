@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { Dumbbell, ArrowRight } from "lucide-react";
-import UpgradeModal from "@/components/UpgradeModal";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -109,12 +107,6 @@ export default function Home() {
         >
           Try Free Trial (1 Member limit) <ArrowRight className="h-4 w-4" />
         </Link>
-        <button
-          onClick={() => setIsUpgradeModalOpen(true)}
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-blue-600 font-semibold text-white shadow-md hover:bg-blue-700 transition active:scale-[0.98]"
-        >
-          View Pro Plans
-        </button>
         <Link
           href="/login"
           className="flex items-center justify-center w-full py-3 rounded-xl border border-slate-300 font-medium text-slate-700 hover:bg-slate-100 transition text-sm mt-2"
@@ -122,11 +114,6 @@ export default function Home() {
           Already have an account? Sign In
         </Link>
       </div>
-
-      <UpgradeModal 
-        isOpen={isUpgradeModalOpen} 
-        onClose={() => setIsUpgradeModalOpen(false)} 
-      />
     </main>
   );
 }
