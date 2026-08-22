@@ -52,9 +52,21 @@ export default function AttendancePage() {
       );
       const mList: Member[] = [];
       membersSnap.forEach((d) => {
-        const data = d.data() as Member;
+        const data = d.data();
         if (data.isActive !== false) {
-          mList.push({ id: d.id, ...data });
+          mList.push({
+            id: d.id,
+            fullName: data.fullName || "",
+            phone: data.phone || "",
+            planType: data.planType || "Monthly",
+            feeAmount: Number(data.feeAmount) || 0,
+            admissionFee: Number(data.admissionFee) || 0,
+            startDate: data.startDate || "",
+            nextDueDate: data.nextDueDate || "",
+            isActive: data.isActive !== false,
+            notes: data.notes || "",
+            createdAt: data.createdAt || "",
+          });
         }
       });
       setMembers(mList);
@@ -63,17 +75,25 @@ export default function AttendancePage() {
       const attQuery = query(
         collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
         where("date", "==", todayStr)
-        );
-
-        const attSnap = await getDocs(attQuery);
-        const aList: AttendanceRecord[] = [];
-        attSnap.forEach((d) => {
-        aList.push({ id: d.id, ...(d.data() as any) });
+      );
+      const attSnap = await getDocs(attQuery);
+      const aList: AttendanceRecord[] = [];
+      attSnap.forEach((d) => {
+        const data = d.data();
+        aList.push({
+          id: d.id,
+          memberId: data.memberId || "",
+          memberName: data.memberName || "",
+          date: data.date || todayStr,
+          time: data.time || "",
+          type: data.type || "MANUAL",
+          timestamp: data.timestamp || "",
         });
+      });
 
-        // Sort in client memory (avoids composite index requirement)
-        aList.sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
-        setAttendanceList(aList);
+      // Sort in client memory
+      aList.sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
+      setAttendanceList(aList);
     } catch (err) {
       console.error("Error loading attendance:", err);
     } finally {
