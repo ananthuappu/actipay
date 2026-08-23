@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "GymPay - Gym Member & Payment Tracker",
+  title: "ActiPay - Member & Payment Tracker",
   description: "Mobile payment tracking and dues management for gym owners",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "GymPay",
+    title: "ActiPay",
   },
 };
 

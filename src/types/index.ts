@@ -1,4 +1,3 @@
-export type SubscriptionPlan = "FREE_TRIAL" | "PRO_100" | "PRO_UNLIMITED";
 
 export interface GymProfile {
   gymId: string;
@@ -6,9 +5,7 @@ export interface GymProfile {
   name: string;
   phone: string;
   currency: string;
-  isSubscribed?: boolean;
-  subscriptionPlan?: SubscriptionPlan;
-  subscriptionExpiresAt?: string;
+  walletBalance: number;
   createdAt: string;
 }
 

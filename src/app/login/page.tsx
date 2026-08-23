@@ -41,8 +41,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col justify-center px-6 py-10 sm:max-w-md sm:mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">GymPay</h1>
-        <p className="text-sm text-slate-500 mt-1">Sign in to manage your gym</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay</h1>
+        <p className="text-sm text-slate-500 mt-1">Sign in to manage your business</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">

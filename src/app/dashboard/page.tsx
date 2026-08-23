@@ -22,8 +22,8 @@ import {
   orderBy,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
-import SubscriptionBanner from "@/components/SubscriptionBanner";
-import UpgradeModal from "@/components/UpgradeModal";
+import RechargeBanner from "@/components/RechargeBanner";
+import RechargeModal from "@/components/RechargeModal";
 import {
   Users,
   AlertCircle,
@@ -51,9 +51,9 @@ export default function DashboardPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-  // Upgrade state
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState("");
+  // Recharge state
+  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
+  const [rechargeReason, setRechargeReason] = useState("");
 
   // Delete Account modal state
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
@@ -136,6 +136,15 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!user) return;
 
+    const requiredAmcs = PLAN_DURATIONS[newPlan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
+    const currentBalance = gym?.walletBalance || 0;
+
+    if (currentBalance < requiredAmcs) {
+      setRechargeReason(`Adding a ${newPlan} member requires ${requiredAmcs} AMCs. You only have ${currentBalance} AMCs.`);
+      setIsRechargeModalOpen(true);
+      return;
+    }
+
     const calculatedDueDate = calculateNextDueDate(newStartDate, newPlan);
     const planFeeNum = Number(newFee) || 0;
     const admissionFeeNum = Number(newAdmissionFee) || 0;
@@ -194,6 +203,11 @@ export default function DashboardPage() {
         }
       );
 
+      // 3. Deduct AMCs from Wallet
+      await updateDoc(doc(db, COLLECTIONS.GYMS, user.uid), {
+        walletBalance: currentBalance - requiredAmcs
+      });
+
       setIsAddModalOpen(false);
       setNewFullName("");
       setNewPhone("");
@@ -207,6 +221,15 @@ export default function DashboardPage() {
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedMember) return;
+
+    const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
+    const currentBalance = gym?.walletBalance || 0;
+
+    if (currentBalance < requiredAmcs) {
+      setRechargeReason(`Renewing for ${planExtension} requires ${requiredAmcs} AMCs. You only have ${currentBalance} AMCs.`);
+      setIsRechargeModalOpen(true);
+      return;
+    }
 
     const today = new Date().toISOString().split("T")[0];
     const baseDate = selectedMember.nextDueDate > today ? selectedMember.nextDueDate : today;
@@ -237,6 +260,11 @@ export default function DashboardPage() {
           isActive: true,
         }
       );
+
+      // Deduct AMCs from Wallet
+      await updateDoc(doc(db, COLLECTIONS.GYMS, user.uid), {
+        walletBalance: currentBalance - requiredAmcs
+      });
 
       setIsPaymentModalOpen(false);
       setSelectedMember(null);
@@ -370,23 +398,19 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-bold text-lg text-slate-900 leading-tight">
-              {gym?.name || "GymPay"}
+              {gym?.name || "ActiPay"}
             </h1>
-            <div className="px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-100 text-amber-700">
-              {gym?.subscriptionPlan === "PRO_UNLIMITED" 
-                ? "Pro Unlimited" 
-                : gym?.subscriptionPlan === "PRO_100" 
-                  ? "Pro 100" 
-                  : "Free Trial"}
+            <div className={`px-1.5 py-0.5 text-[10px] font-bold uppercase rounded ${
+              (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+            }`}>
+              {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
             </div>
-            {gym?.subscriptionPlan === "PRO_100" && (
-              <button 
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded shadow-sm hover:bg-blue-700 transition"
-              >
-                Upgrade
-              </button>
-            )}
+            <button 
+              onClick={() => setIsRechargeModalOpen(true)}
+              className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded shadow-sm hover:bg-blue-700 transition"
+            >
+              Recharge
+            </button>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-0.5">Dashboard</p>
         </div>
@@ -408,7 +432,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <SubscriptionBanner />
+      <RechargeBanner />
 
       {/* Metrics Section */}
       <section className="p-4 grid grid-cols-3 gap-2">
@@ -530,16 +554,11 @@ export default function DashboardPage() {
       {/* Floating Action Button (Add Member) */}
       <button
         onClick={() => {
-          if (gym?.isSubscribed !== true && members.length >= 1) {
-            setUpgradeReason(
-              "You have reached the 1-member free trial limit. Upgrade to Pro to add more members."
+          if ((gym?.walletBalance || 0) === 0) {
+            setRechargeReason(
+              "Your wallet is empty. You need at least 1 AMC to add a member."
             );
-            setIsUpgradeModalOpen(true);
-          } else if (gym?.subscriptionPlan === "PRO_100" && members.length >= 100) {
-            setUpgradeReason(
-              "You have reached the 100-member limit for your plan. Upgrade to Pro Unlimited to add more members."
-            );
-            setIsUpgradeModalOpen(true);
+            setIsRechargeModalOpen(true);
           } else {
             setIsAddModalOpen(true);
           }
@@ -867,10 +886,10 @@ export default function DashboardPage() {
       <BottomNav />
 
       {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-        reason={upgradeReason}
+      <RechargeModal
+        isOpen={isRechargeModalOpen}
+        onClose={() => setIsRechargeModalOpen(false)}
+        reason={rechargeReason}
       />
     </div>
   );

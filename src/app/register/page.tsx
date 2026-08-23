@@ -47,10 +47,7 @@ export default function RegisterPage() {
         phone: cleanPhone,
         authEmail: authEmail,
         currency: "INR",
-        isSubscribed: false,
-        subscriptionPlan: "FREE_TRIAL",
-        subscriptionExpiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        planOptionsHint: "Valid plans: FREE_TRIAL, PRO_100, PRO_UNLIMITED",
+        walletBalance: 1, // 1 Free AMC for Trial
         createdAt: new Date().toISOString(),
       };
 
@@ -72,8 +69,8 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen flex-col justify-center px-6 py-10 sm:max-w-md sm:mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">GymPay</h1>
-        <p className="text-sm text-slate-500 mt-1">Setup your gym account in seconds</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay</h1>
+        <p className="text-sm text-slate-500 mt-1">Setup your business account in seconds</p>
       </div>
 
       <form onSubmit={handleRegister} className="space-y-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -84,11 +81,11 @@ export default function RegisterPage() {
         )}
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Gym Name *</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Business / Center Name *</label>
           <input
             type="text"
             required
-            placeholder="e.g. Iron Pulse Fitness"
+            placeholder="e.g. Iron & Steel Fitness"
             value={gymName}
             onChange={(e) => setGymName(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

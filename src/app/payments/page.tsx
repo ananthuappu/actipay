@@ -8,7 +8,7 @@ import { COLLECTIONS } from "@/lib/constants";
 import { PaymentRecord } from "@/types";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
-import SubscriptionBanner from "@/components/SubscriptionBanner";
+import RechargeBanner from "@/components/RechargeBanner";
 import {
   IndianRupee,
   TrendingUp,
@@ -214,7 +214,7 @@ export default function PaymentsPage() {
         </p>
       </header>
       
-      <SubscriptionBanner />
+      <RechargeBanner />
 
       <section className="p-4 space-y-4">
         {/* Top Cards: Total Collections */}

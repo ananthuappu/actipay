@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Dumbbell, ArrowRight } from "lucide-react";
+import { Activity, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -29,9 +29,12 @@ export default function Home() {
       <div className="w-full flex justify-between items-center py-4">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-slate-900">
           <div className="p-2 bg-blue-600 text-white rounded-xl">
-            <Dumbbell className="h-5 w-5" />
+            <Activity className="h-5 w-5" />
           </div>
-          GymPay
+          <div className="flex flex-col">
+            <span className="leading-none">ActiPay</span>
+            <span className="text-[9px] text-slate-500 tracking-wide mt-0.5">PAY PER ACTIVE MEMBER</span>
+          </div>
         </div>
         <Link
           href="/login"
@@ -45,57 +48,49 @@ export default function Home() {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
           ⚡ Mobile Payment Tracker
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Collect Gym Fees <br />
-          <span className="text-blue-600">On Time, Every Time</span>
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
+          Zero Dead <br /> Subscriptions. <br />
+          <span className="text-blue-600">Pay Per Active Member.</span>
         </h1>
         <p className="text-sm text-slate-600 px-4">
-          Simple member dues tracking and one-tap WhatsApp payment reminders built for gym owners.
+          Stop paying flat monthly software fees for ghost members. Our prepaid credit system ensures you only pay for members who actually attend.
         </p>
 
-        {/* Pricing Cards */}
+        {/* Pricing Cards - Prepaid AMC */}
         <div className="mt-8 space-y-4 max-w-sm mx-auto">
-          {/* Pro 100 */}
-          <div className="text-left bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-            <h2 className="text-lg font-bold text-slate-900 mb-1">Pro 100</h2>
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-2xl font-extrabold text-slate-900">₹399</span>
-              <span className="text-xs text-slate-500 font-medium">/ month</span>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Prepaid Active Member Credits</p>
+          
+          {/* 50 AMC Pack */}
+          <div className="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">50 AMC Pack</h2>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-extrabold text-slate-900">₹229</span>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">~₹4.58 / member</span>
             </div>
-            
-            <ul className="space-y-2 mb-4">
-              <li className="flex items-start text-xs text-slate-600">
-                <span className="mr-2 text-green-500">✓</span>
-                Up to 100 members
-              </li>
-              <li className="flex items-start text-xs text-slate-600">
-                <span className="mr-2 text-green-500">✓</span>
-                WhatsApp dues reminders & alerts
-              </li>
-            </ul>
+            <p className="text-xs text-slate-600">Valid for 50 active member renewals.</p>
           </div>
 
-          {/* Pro Unlimited */}
-          <div className="text-left bg-blue-50 border border-blue-200 ring-1 ring-blue-500 rounded-2xl p-5 shadow-xs relative">
+          {/* 100 AMC Pack */}
+          <div className="text-left bg-blue-50 border border-blue-200 ring-1 ring-blue-500 rounded-2xl p-4 shadow-xs relative">
             <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl rounded-tr-xl">
-              BEST VALUE
+              POPULAR
             </div>
-            <h2 className="text-lg font-bold text-blue-900 mb-1">Pro Unlimited</h2>
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-2xl font-extrabold text-blue-900">₹799</span>
-              <span className="text-xs text-blue-600 font-medium">/ month</span>
+            <h2 className="text-lg font-bold text-blue-900 mb-1">100 AMC Pack</h2>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-extrabold text-blue-900">₹399</span>
+              <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">~₹3.99 / member</span>
             </div>
-            
-            <ul className="space-y-2 mb-4">
-              <li className="flex items-start text-xs text-slate-600">
-                <span className="mr-2 text-green-500">✓</span>
-                Unlimited members & payments
-              </li>
-              <li className="flex items-start text-xs text-slate-600">
-                <span className="mr-2 text-green-500">✓</span>
-                All features from Pro 100
-              </li>
-            </ul>
+            <p className="text-xs text-blue-800/80">Valid for 100 active member renewals.</p>
+          </div>
+
+          {/* 300 AMC Pack */}
+          <div className="text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">300 AMC Pack</h2>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-extrabold text-slate-900">₹899</span>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">~₹2.99 / member</span>
+            </div>
+            <p className="text-xs text-slate-600">Valid for 300 active member renewals.</p>
           </div>
         </div>
       </div>
@@ -105,7 +100,7 @@ export default function Home() {
           href="/register"
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-slate-900 font-semibold text-white shadow-md hover:bg-slate-800 transition active:scale-[0.98]"
         >
-          Try Free Trial (1 Member limit) <ArrowRight className="h-4 w-4" />
+          Try Free Trial (1 Free AMC) <ArrowRight className="h-4 w-4" />
         </Link>
         <Link
           href="/login"

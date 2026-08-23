@@ -17,7 +17,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
-import SubscriptionBanner from "@/components/SubscriptionBanner";
+import RechargeBanner from "@/components/RechargeBanner";
 import {
   Users,
   Search,
@@ -239,7 +239,7 @@ export default function MembersPage() {
         </p>
       </header>
       
-      <SubscriptionBanner />
+      <RechargeBanner />
 
       {/* Filter Tabs */}
       <div className="p-4 pb-2">
