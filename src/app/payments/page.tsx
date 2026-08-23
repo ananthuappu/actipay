@@ -189,7 +189,7 @@ export default function PaymentsPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  if (loading || loadingData) {
+  if (loading || loadingData || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />

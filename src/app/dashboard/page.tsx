@@ -383,7 +383,7 @@ export default function DashboardPage() {
   const overdueCount = members.filter((m) => getStatus(m.nextDueDate).label === "OVERDUE").length;
   const dueSoonCount = members.filter((m) => getStatus(m.nextDueDate).label === "DUE SOON").length;
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />

@@ -205,7 +205,7 @@ export default function AdminPage() {
 
   const totalTokensCirculating = gyms.reduce((acc, g) => acc + (g.walletBalance || 0), 0);
 
-  if (loading || loadingData) {
+  if (loading || loadingData || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />

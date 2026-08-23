@@ -221,7 +221,7 @@ export default function MembersPage() {
   const absentCount = members.filter((m) => m.isActive !== false && getDaysAbsent(m) >= 4).length;
   const exitedCount = members.filter((m) => m.isActive === false).length;
 
-  if (loading || loadingData) {
+  if (loading || loadingData || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
