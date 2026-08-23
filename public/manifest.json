@@ -1,7 +1,7 @@
 {
-  "name": "GymPay - Gym Member & Payment Tracker",
-  "short_name": "GymPay",
-  "description": "Fast member payment tracking and WhatsApp reminders for gym owners",
+  "name": "ActiPay - Member & Payment Tracker",
+  "short_name": "ActiPay",
+  "description": "Fast member payment tracking and WhatsApp reminders for gyms, yoga studios, and fitness centers.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
