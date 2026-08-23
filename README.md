@@ -1,6 +1,8 @@
-# 🏋️ GymPay — Mobile Gym Member & Payment Tracker
+# ⚡ ActiPay — Member Dues & Payment Tracker
 
-A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **Tailwind CSS**, and **Firebase** for independent gym owners. Manage memberships, track recurring fee dues, log daily attendance, view payment analytics, and send one-tap WhatsApp reminders — engineered to run at **strictly $0/month operational cost**.
+A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **Tailwind CSS**, and **Firebase** for gyms, yoga studios, and fitness centers. Manage memberships, track recurring fee dues, log daily attendance, view payment analytics, and send one-tap WhatsApp reminders.
+
+Engineered with a unique **Prepaid Active Member Credit (AMC)** model — allowing businesses to stop paying flat SaaS fees for ghost members and only pay for exactly what they use.
 
 ---
 
@@ -12,8 +14,9 @@ A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **
 
 ### 2. Dashboard & Dues Management (`/dashboard`)
 - **Real-Time Overview Metrics:** Instant counters for Active Members, Dues Soon (within 3 days), and Overdue Members.
-- **Dynamic Due Engine:** Calculates active, due, and overdue statuses on the client side ($0 Spark Plan friendly).
+- **Dynamic Due Engine:** Calculates active, due, and overdue statuses on the client side.
 - **Quick Member Onboarding:** Add members, choose membership plans (Monthly, Quarterly, Half-Yearly, Annual), and track one-time **Admission/Advance Fees**.
+- **Prepaid AMC Protection:** Seamlessly validates wallet balance before allowing an owner to add or renew a member. Automatically blocks actions if the owner doesn't have sufficient AMCs.
 - **One-Tap WhatsApp Reminders:** Send pre-formatted, personalized payment reminder messages with a single tap.
 - **Fast Payment Extensions:** Log renewals by 1, 3, 6, or 12 months with payment mode selection (UPI, Cash, Card, Bank Transfer).
 - **Payment History Drawer:** View previous transaction receipts for any member on demand.
