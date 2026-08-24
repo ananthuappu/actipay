@@ -49,6 +49,7 @@ export default function MembersPage() {
   const [editPlan, setEditPlan] = useState<PlanType>("Monthly");
   const [editFee, setEditFee] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editIsPT, setEditIsPT] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -119,6 +120,7 @@ export default function MembersPage() {
     setEditPlan(m.planType);
     setEditFee(String(m.feeAmount));
     setEditDueDate(m.nextDueDate);
+    setEditIsPT(m.isPT || false);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -134,6 +136,7 @@ export default function MembersPage() {
           planType: editPlan,
           feeAmount: Number(editFee),
           nextDueDate: editDueDate,
+          isPT: editIsPT,
         }
       );
       setEditingMember(null);
@@ -218,6 +221,7 @@ export default function MembersPage() {
   }, [members, statusFilter, searchQuery, lastAttendanceMap]);
 
   const activeCount = members.filter((m) => m.isActive !== false).length;
+  const activePTCount = members.filter((m) => m.isActive !== false && m.isPT).length;
   const absentCount = members.filter((m) => m.isActive !== false && getDaysAbsent(m) >= 4).length;
   const exitedCount = members.filter((m) => m.isActive === false).length;
 
@@ -253,6 +257,11 @@ export default function MembersPage() {
             }`}
           >
             All Active ({activeCount})
+            {activePTCount > 0 && (
+              <span className="ml-1 text-[9px] bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded">
+                {activePTCount} PT
+              </span>
+            )}
           </button>
           <button
             onClick={() => setStatusFilter("ABSENT")}
@@ -316,7 +325,14 @@ export default function MembersPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">{m.fullName}</h3>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      {m.fullName}
+                      {m.isPT && (
+                        <span className="bg-indigo-100 text-indigo-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
+                          PT
+                        </span>
+                      )}
+                    </h3>
                     <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
                       <Phone className="h-3 w-3" /> {m.phone}
                     </div>
@@ -480,6 +496,19 @@ export default function MembersPage() {
                   onChange={(e) => setEditDueDate(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-2">
+                <input
+                  type="checkbox"
+                  id="edit-pt-checkbox"
+                  checked={editIsPT}
+                  onChange={(e) => setEditIsPT(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="edit-pt-checkbox" className="text-xs font-semibold text-indigo-900 cursor-pointer select-none">
+                  Personal Training (PT)
+                </label>
               </div>
 
               <button

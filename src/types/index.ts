@@ -24,6 +24,7 @@ export interface Member {
   startDate: string;
   nextDueDate: string;
   isActive: boolean; // false if member exits the gym
+  isPT?: boolean; // True if they opted for Personal Training
   notes?: string;
   createdAt: string;
 }

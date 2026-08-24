@@ -78,6 +78,7 @@ export default function DashboardPage() {
   const [newStartDate, setNewStartDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [newIsPT, setNewIsPT] = useState(false);
 
   // Form states for recording payment
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -157,7 +158,7 @@ export default function DashboardPage() {
     const planFeeNum = Number(newFee) || 0;
     const admissionFeeNum = Number(newAdmissionFee) || 0;
 
-    const memberData = {
+      const memberData = {
       fullName: newFullName.trim(),
       phone: newPhone.trim().replace(/\D/g, ""),
       planType: newPlan,
@@ -166,6 +167,7 @@ export default function DashboardPage() {
       startDate: newStartDate,
       nextDueDate: calculatedDueDate,
       isActive: true,
+      isPT: newIsPT,
       createdAt: new Date().toISOString(),
     };
 
@@ -220,6 +222,7 @@ export default function DashboardPage() {
       setNewFullName("");
       setNewPhone("");
       setNewAdmissionFee("0");
+      setNewIsPT(false);
       fetchMembers();
     } catch (err) {
       console.error("Failed to add member:", err);
@@ -408,6 +411,7 @@ export default function DashboardPage() {
   });
 
   const totalActive = members.length;
+  const ptCount = members.filter((m) => m.isPT).length;
   const overdueCount = members.filter((m) => getStatus(m.nextDueDate).label === "OVERDUE").length;
   const dueSoonCount = members.filter((m) => getStatus(m.nextDueDate).label === "DUE SOON").length;
 
@@ -476,11 +480,16 @@ export default function DashboardPage() {
 
       {/* Metrics Section */}
       <section className="p-4 grid grid-cols-3 gap-2">
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs relative">
           <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
             <Users className="h-3.5 w-3.5 text-blue-600" /> Active
           </div>
           <p className="text-xl font-bold text-slate-900">{totalActive}</p>
+          {ptCount > 0 && (
+            <div className="absolute top-3 right-3 text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase">
+              {ptCount} PT
+            </div>
+          )}
         </div>
         <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center gap-1.5 text-amber-600 text-xs font-semibold mb-1">
@@ -533,8 +542,15 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-sm text-slate-900">{member.fullName}</h3>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                      {member.fullName}
+                      {member.isPT && (
+                        <span className="bg-indigo-100 text-indigo-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">
+                          PT
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
                       <Phone className="h-3 w-3" /> {member.phone}
                     </div>
                   </div>
@@ -699,6 +715,19 @@ export default function DashboardPage() {
                   onChange={(e) => setNewStartDate(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-2">
+                <input
+                  type="checkbox"
+                  id="pt-checkbox"
+                  checked={newIsPT}
+                  onChange={(e) => setNewIsPT(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="pt-checkbox" className="text-xs font-semibold text-indigo-900 cursor-pointer select-none">
+                  Opted for Personal Training (PT)
+                </label>
               </div>
 
               <button

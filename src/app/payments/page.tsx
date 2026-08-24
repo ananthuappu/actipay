@@ -18,11 +18,12 @@ import {
   Search,
   Calendar,
   ArrowDownLeft,
-  Share2,
   BarChart3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download
 } from "lucide-react";
+import ReceiptModal from "@/components/ReceiptModal";
 
 export default function PaymentsPage() {
   const { user, gym, loading } = useAuth();
@@ -35,6 +36,7 @@ export default function PaymentsPage() {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<PaymentRecord | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -42,11 +44,25 @@ export default function PaymentsPage() {
     }
   }, [user, loading, router]);
 
+  const [ptMemberIds, setPtMemberIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
-    const fetchPayments = async () => {
+    const fetchData = async () => {
       if (!user) return;
       setLoadingData(true);
       try {
+        // Fetch Members for PT mapping
+        const membersSnap = await getDocs(
+          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
+        );
+        const ptIds = new Set<string>();
+        membersSnap.forEach((d) => {
+          const data = d.data();
+          if (data.isPT) ptIds.add(d.id);
+        });
+        setPtMemberIds(ptIds);
+
+        // Fetch Payments
         const q = query(
           collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
           orderBy("paymentDate", "desc")
@@ -58,14 +74,14 @@ export default function PaymentsPage() {
         });
         setPayments(list);
       } catch (err) {
-        console.error("Error fetching payment logs:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoadingData(false);
       }
     };
 
     if (user) {
-      fetchPayments();
+      fetchData();
     }
   }, [user]);
 
@@ -117,6 +133,8 @@ export default function PaymentsPage() {
     // Split
     let recurringTotal = 0;
     let advanceTotal = 0;
+    let ptTotal = 0;
+    let ptThisMonth = 0;
 
     const modeCounts: Record<string, number> = { UPI: 0, Cash: 0, Card: 0 };
 
@@ -135,13 +153,17 @@ export default function PaymentsPage() {
       totalLifetime += amt;
 
       const isAdvance = p.category === "ADMISSION" || p.validUntil === "-";
+      const isPT = ptMemberIds.has(p.memberId);
       
       // Update Split
       if (isAdvance) advanceTotal += amt;
       else recurringTotal += amt;
 
+      if (isPT) ptTotal += amt;
+
       if (p.paymentDate?.startsWith(thisMonthStr)) {
         thisMonthTotal += amt;
+        if (isPT) ptThisMonth += amt;
       }
 
       if (p.paymentMode) {
@@ -164,30 +186,16 @@ export default function PaymentsPage() {
     return { 
       totalLifetime, 
       thisMonthTotal, 
-      modeCounts, 
       recurringTotal, 
       advanceTotal,
+      ptTotal,
+      ptThisMonth,
+      modeCounts, 
       last6Months,
       maxRevenue
     };
-  }, [payments, thisMonthStr, today]);
+  }, [payments, thisMonthStr, ptMemberIds, today]);
 
-  const sendWhatsAppReceipt = (payment: PaymentRecord) => {
-    const gymName = gym?.name || "Our Gym";
-    const amountStr = `₹${payment.amount}`;
-    let text = `Hi ${payment.memberName}, this is a payment receipt from ${gymName}.\n\n`;
-    text += `✅ *Amount Received:* ${amountStr}\n`;
-    text += `📅 *Date:* ${payment.paymentDate}\n`;
-    text += `💳 *Mode:* ${payment.paymentMode}\n`;
-    if (payment.validUntil !== "-") {
-      text += `⏱️ *Valid Until:* ${payment.validUntil}\n`;
-    } else {
-      text += `🏷️ *Category:* Admission / Advance\n`;
-    }
-    text += `\nThank you!`;
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  };
 
   if (loading || loadingData || !user) {
     return (
@@ -226,9 +234,22 @@ export default function PaymentsPage() {
           <div className="text-3xl font-extrabold tracking-tight">
             ₹{stats.thisMonthTotal.toLocaleString("en-IN")}
           </div>
-          <div className="mt-4 pt-3 border-t border-white/20 flex justify-between text-xs opacity-90">
-            <span>Lifetime Revenue</span>
-            <span className="font-bold">₹{stats.totalLifetime.toLocaleString("en-IN")}</span>
+          {stats.ptThisMonth > 0 && (
+            <div className="mt-1 text-xs font-semibold text-blue-200">
+              Includes ₹{stats.ptThisMonth.toLocaleString("en-IN")} from PT
+            </div>
+          )}
+          <div className="mt-4 pt-3 border-t border-white/20 flex flex-col gap-1 text-xs opacity-90">
+            <div className="flex justify-between">
+              <span>Lifetime Revenue</span>
+              <span className="font-bold">₹{stats.totalLifetime.toLocaleString("en-IN")}</span>
+            </div>
+            {stats.ptTotal > 0 && (
+              <div className="flex justify-between text-blue-200">
+                <span>Total PT Revenue</span>
+                <span className="font-bold">₹{stats.ptTotal.toLocaleString("en-IN")}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -440,13 +461,15 @@ export default function PaymentsPage() {
                       To {payment.validUntil}
                     </p>
                   </div>
-                  <button 
-                    onClick={() => sendWhatsAppReceipt(payment)}
-                    className="flex items-center gap-1 text-[9px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 px-2 py-1 rounded transition border border-slate-200 hover:border-emerald-200 font-semibold"
-                    title="Share Receipt on WhatsApp"
-                  >
-                    <Share2 className="h-3 w-3" /> Share
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => setSelectedReceipt(payment)}
+                      className="flex items-center gap-1 text-[9px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 px-2 py-1 rounded transition border border-slate-200 hover:border-blue-200 font-semibold"
+                      title="Generate Receipt"
+                    >
+                      <Download className="h-3 w-3" /> Receipt
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -456,6 +479,15 @@ export default function PaymentsPage() {
 
       {/* Persistent Bottom Navigation */}
       <BottomNav />
+
+      {selectedReceipt && (
+        <ReceiptModal
+          payment={selectedReceipt}
+          gymName={gym?.name || "Our Gym"}
+          gymPhone={gym?.phone}
+          onClose={() => setSelectedReceipt(null)}
+        />
+      )}
     </div>
   );
 }

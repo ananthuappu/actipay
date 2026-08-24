@@ -65,6 +65,7 @@ export default function AttendancePage() {
             startDate: data.startDate || "",
             nextDueDate: data.nextDueDate || "",
             isActive: data.isActive !== false,
+            isPT: data.isPT || false,
             notes: data.notes || "",
             createdAt: data.createdAt || "",
           });
@@ -221,7 +222,14 @@ export default function AttendancePage() {
               }`}
             >
               <div>
-                <h4 className="text-xs font-bold text-slate-900">{member.fullName}</h4>
+                <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  {member.fullName}
+                  {member.isPT && (
+                    <span className="bg-indigo-100 text-indigo-700 text-[8px] font-bold px-1 py-0.5 rounded uppercase">
+                      PT
+                    </span>
+                  )}
+                </h4>
                 <p className="text-[10px] text-slate-400 mt-0.5">
                   {isCheckedIn ? (
                     <span className="text-emerald-700 font-semibold flex items-center gap-1">
