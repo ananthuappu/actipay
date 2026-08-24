@@ -133,12 +133,44 @@ export default function DashboardPage() {
     return { label: "ACTIVE", color: "bg-emerald-100 text-emerald-700 border-emerald-200" };
   };
 
-  // Helper to calculate future date
-  const calculateNextDueDate = (startDateStr: string, plan: PlanType) => {
-    const date = new Date(startDateStr);
+  // Helper to calculate future date anchoring to the join date
+  const calculateNextDueDate = (baseDateStr: string, plan: PlanType, originalStartDateStr?: string) => {
+    const baseDate = new Date(baseDateStr);
     const months = PLAN_DURATIONS[plan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
-    date.setMonth(date.getMonth() + months);
-    return date.toISOString().split("T")[0];
+    
+    let targetMonth = baseDate.getMonth() + months;
+    let targetYear = baseDate.getFullYear();
+    let targetDay = baseDate.getDate();
+
+    if (originalStartDateStr) {
+      const origDate = new Date(originalStartDateStr);
+      targetDay = origDate.getDate(); // Force the day to be the join date
+    }
+
+    const newDate = new Date(targetYear, targetMonth, targetDay);
+    
+    // Handle months with fewer days (e.g. asking for Feb 31st results in Mar 3rd)
+    // If the month rolled over to the next month, clamp it to the last day of the intended month
+    if (newDate.getMonth() !== (targetMonth % 12 + 12) % 12) {
+      newDate.setDate(0); 
+    }
+    
+    return newDate.toISOString().split("T")[0];
+  };
+
+  const calculateOwedAmount = (member: Member) => {
+    const today = new Date();
+    const due = new Date(member.nextDueDate);
+    const diffTime = today.getTime() - due.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let multiplier = 1;
+    if (diffDays > 0) {
+      const planDurationMonths = PLAN_DURATIONS[member.planType.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
+      const cycleLengthDays = planDurationMonths * 30;
+      multiplier = Math.max(1, Math.ceil(diffDays / cycleLengthDays));
+    }
+    return member.feeAmount * multiplier;
   };
 
   const handleAddMember = async (e: React.FormEvent) => {
@@ -154,7 +186,7 @@ export default function DashboardPage() {
       return;
     }
 
-    const calculatedDueDate = calculateNextDueDate(newStartDate, newPlan);
+    const calculatedDueDate = calculateNextDueDate(newStartDate, newPlan, newStartDate);
     const planFeeNum = Number(newFee) || 0;
     const admissionFeeNum = Number(newAdmissionFee) || 0;
 
@@ -264,7 +296,7 @@ export default function DashboardPage() {
 
     const today = new Date().toISOString().split("T")[0];
     const baseDate = selectedMember.nextDueDate > today ? selectedMember.nextDueDate : today;
-    const newDueDate = calculateNextDueDate(baseDate, planExtension);
+    const newDueDate = calculateNextDueDate(baseDate, planExtension, selectedMember.startDate);
 
     try {
       await addDoc(
@@ -586,7 +618,7 @@ export default function DashboardPage() {
                   <button
                     onClick={() => {
                       setSelectedMember(member);
-                      setPaymentAmount(String(member.feeAmount));
+                      setPaymentAmount(String(calculateOwedAmount(member)));
                       setIsPaymentModalOpen(true);
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition active:scale-95 shadow-xs"
