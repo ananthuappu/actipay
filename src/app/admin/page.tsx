@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, notFound } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { COLLECTIONS } from "@/lib/constants";
 import { GymProfile } from "@/types";
@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, gym, loading } = useAuth();
   const router = useRouter();
 
   const [gyms, setGyms] = useState<GymProfile[]>([]);
@@ -39,8 +39,9 @@ export default function AdminPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Optional: Restrict view to authorized email
-  const ADMIN_EMAILS = ["gympaysupport@gmail.com"];
+  if (!loading && gym && gym.role !== "admin") {
+    notFound();
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -63,6 +64,7 @@ export default function AdminPage() {
           phone: data.phone || "No phone",
           currency: data.currency || "INR",
           walletBalance: data.walletBalance ?? 0,
+          subscriptionPlan: data.subscriptionPlan || "TRIAL",
           createdAt: data.createdAt || "",
           ...data,
         } as GymProfile);
@@ -90,12 +92,13 @@ export default function AdminPage() {
       const gymRef = doc(db, COLLECTIONS.GYMS, gymId);
       await updateDoc(gymRef, {
         walletBalance: increment(amount),
+        subscriptionPlan: "PAID",
       });
 
       setGyms((prev) =>
         prev.map((g) =>
           g.gymId === gymId
-            ? { ...g, walletBalance: (g.walletBalance || 0) + amount }
+            ? { ...g, walletBalance: (g.walletBalance || 0) + amount, subscriptionPlan: "PAID" }
             : g
         )
       );
@@ -138,8 +141,8 @@ export default function AdminPage() {
   const EXPIRED_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
   const expiredGyms = gyms.filter((g) => {
-    // Only target expired accounts on trial / empty balances
-    if ((g.walletBalance || 0) > 1) return false;
+    // Target only accounts still on trial
+    if (g.subscriptionPlan === "PAID") return false;
     if (!g.createdAt) return false;
 
     const createdTime = new Date(g.createdAt).getTime();

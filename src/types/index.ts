@@ -4,8 +4,11 @@ export interface GymProfile {
   ownerId: string;
   name: string;
   phone: string;
+  authEmail?: string;
   currency: string;
   walletBalance: number;
+  subscriptionPlan?: "TRIAL" | "PAID";
+  role?: "owner" | "admin";
   createdAt: string;
 }
 

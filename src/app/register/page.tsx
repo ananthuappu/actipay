@@ -47,7 +47,9 @@ export default function RegisterPage() {
         phone: cleanPhone,
         authEmail: authEmail,
         currency: "INR",
-        walletBalance: 1, // 1 Free AMC for Trial
+        walletBalance: 10, // 10 Free AMCs for Trial
+        subscriptionPlan: "TRIAL",
+        role: "owner",
         createdAt: new Date().toISOString(),
       };
 
@@ -93,7 +95,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Owner Mobile Number *</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Owner&apos;s WhatsApp Number *</label>
           <input
             type="tel"
             required

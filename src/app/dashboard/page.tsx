@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
+import TrialBanner from "@/components/TrialBanner";
 import RechargeModal from "@/components/RechargeModal";
 import {
   Users,
@@ -38,10 +39,11 @@ import {
   History,
   Trash2,
   AlertTriangle,
+  Settings,
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, gym, loading, logout } = useAuth();
+  const { user, gym, loading, logout, refreshGymData } = useAuth();
   const router = useRouter();
 
   const [members, setMembers] = useState<Member[]>([]);
@@ -50,6 +52,12 @@ export default function DashboardPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+  // Edit Profile state
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Recharge state
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
@@ -215,6 +223,26 @@ export default function DashboardPage() {
       fetchMembers();
     } catch (err) {
       console.error("Failed to add member:", err);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !gym) return;
+    setIsEditingProfile(true);
+    try {
+      const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+      await updateDoc(gymRef, {
+        name: editName.trim(),
+        phone: editPhone.trim().replace(/\D/g, ""),
+      });
+      await refreshGymData();
+      setIsEditProfileModalOpen(false);
+    } catch (err) {
+      console.error("Failed to update gym profile:", err);
+      alert("Failed to update profile. Please try again.");
+    } finally {
+      setIsEditingProfile(false);
     }
   };
 
@@ -416,6 +444,17 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-1">
           <button
+            onClick={() => {
+              setEditName(gym?.name || "");
+              setEditPhone(gym?.phone || "");
+              setIsEditProfileModalOpen(true);
+            }}
+            className="p-2 text-slate-400 hover:text-blue-600 transition rounded-lg hover:bg-blue-50"
+            title="Edit Gym Profile"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+          <button
             onClick={() => setIsDeleteAccountModalOpen(true)}
             className="p-2 text-slate-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
             title="Delete Gym Account"
@@ -432,6 +471,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      <TrialBanner />
       <RechargeBanner />
 
       {/* Metrics Section */}
@@ -535,7 +575,8 @@ export default function DashboardPage() {
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition active:scale-95 shadow-xs"
                   >
-                    <CreditCard className="h-3.5 w-3.5" /> Pay
+                    <CreditCard className="h-3.5 w-3.5" /> 
+                    {status.label === "ACTIVE" ? "Extend" : "Pay"}
                   </button>
                   <button
                     onClick={() => viewMemberHistory(member)}
@@ -786,6 +827,66 @@ export default function DashboardPage() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Edit Profile */}
+      {isEditProfileModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="font-bold text-slate-900">Edit Business Profile</h2>
+              <button
+                onClick={() => setIsEditProfileModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Business Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Contact Phone</label>
+                <input
+                  type="tel"
+                  required
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Login Email</label>
+                <input
+                  type="email"
+                  disabled
+                  value={gym?.authEmail || user?.email || ""}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Authentication email cannot be changed.</p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isEditingProfile}
+                className="w-full py-3 rounded-xl bg-blue-600 font-bold text-white shadow-md hover:bg-blue-700 transition active:scale-95 disabled:opacity-70"
+              >
+                {isEditingProfile ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
           </div>
         </div>
       )}

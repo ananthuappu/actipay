@@ -171,7 +171,7 @@ export default function AttendancePage() {
       <section className="p-4 pb-2">
         <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 text-white shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 mb-1">
-            <Zap className="h-4 w-4" /> Hardware Biometric Sync Ready
+            <Zap className="h-4 w-4" /> Hardware Biometric Sync (coming soon)
           </div>
           <p className="text-[11px] text-slate-300 leading-relaxed">
             Connect your eSSL / ZKTeco face or fingerprint scanner via cloud webhook to log scans automatically.

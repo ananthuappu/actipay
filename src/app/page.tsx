@@ -100,7 +100,7 @@ export default function Home() {
           href="/register"
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-slate-900 font-semibold text-white shadow-md hover:bg-slate-800 transition active:scale-[0.98]"
         >
-          Try Free Trial (1 Free AMC) <ArrowRight className="h-4 w-4" />
+          Try Free Trial (10 Free AMCs) <ArrowRight className="h-4 w-4" />
         </Link>
         <Link
           href="/login"
