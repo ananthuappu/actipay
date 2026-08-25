@@ -46,15 +46,28 @@ Engineered with a unique **Prepaid Active Member Credit (AMC)** model — allowi
 
 ---
 
-## 🛠️ Zero-Cost Tech Stack
+## 🛠️ Technology Stack
 
-| Layer | Technology | Cost |
-| :--- | :--- | :--- |
-| **Frontend** | Next.js (App Router), React, Tailwind CSS, Lucide Icons | **$0** |
-| **Hosting & CDN** | Vercel (Hobby Tier) | **$0** |
-| **Database & Auth** | Firebase Authentication & Cloud Firestore (Spark Free Plan) | **$0** |
-| **PWA Engine** | Web App Manifest & Service Worker Meta | **$0** |
-| **Messaging** | Native `wa.me` WhatsApp Deep Linking | **$0** |
+This platform is built on a modern, high-performance, and deeply integrated architecture:
+
+### Core Framework & Language
+* **Next.js (App Router):** The overarching React framework powering the app, handling routing, server-side rendering, and API endpoints (like the auto-generated logo).
+* **React 19:** The UI library used to build all components, manage state, and handle interactive elements.
+* **TypeScript:** The entire codebase is strictly typed to catch bugs at compile-time and mathematically secure data structures (like Gym and Member profiles).
+
+### Styling & UI
+* **Tailwind CSS v4:** The utility-first CSS framework used for all styling. Allows us to build beautiful, responsive layouts directly inside React components without maintaining separate CSS files.
+* **Lucide React:** A beautiful, lightweight SVG icon library providing all the scalable icons used throughout the dashboard.
+
+### Backend & Database (BaaS)
+* **Firebase Authentication:** Handles all secure user sign-ups, secure logins, password management, and session tokens.
+* **Firebase Cloud Firestore:** A real-time NoSQL database. Stores all Gyms, Members, Payments, and Attendance records. We heavily utilize **Atomic Transactions** (to securely deduct tokens without race conditions) and **Real-time Listeners** (to push live UI updates).
+
+### Progressive Web App (PWA)
+* **PWA Engine:** The app is configured with a Web Manifest and Service Worker, allowing it to bypass App Stores. It natively prompts users to install and runs directly on the device's hardware like a native iOS or Android app.
+
+### Utilities
+* **html-to-image:** A specialized library used in the Receipt Generator to take HTML receipt cards, convert them into crisp JPEGs, and pass them to the native mobile Web Share API for WhatsApp sharing.
 
 ---
 
