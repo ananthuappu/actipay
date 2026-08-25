@@ -1,4 +1,4 @@
-# ⚡ ActiPay — Member Dues & Payment Tracker
+# ⚡ ActiPay Fitness — Member Dues & Payment Tracker
 
 A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **Tailwind CSS**, and **Firebase** for gyms, yoga studios, and fitness centers. Manage memberships, track recurring fee dues, log daily attendance, view payment analytics, and send one-tap WhatsApp reminders.
 

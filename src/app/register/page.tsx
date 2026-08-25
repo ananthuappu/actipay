@@ -78,7 +78,7 @@ export default function RegisterPage() {
     <main className="flex min-h-screen flex-col justify-center px-6 py-10 sm:max-w-md sm:mx-auto">
       <div className="text-center mb-8 flex flex-col items-center">
         <Link href="/" className="inline-block hover:opacity-80 transition">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay Fitness</h1>
         </Link>
         <p className="text-sm text-slate-500 mt-1">Setup your business account in seconds</p>
       </div>

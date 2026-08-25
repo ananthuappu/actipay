@@ -15,13 +15,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ActiPay - Member & Payment Tracker",
-  description: "Mobile payment tracking and dues management for gym owners",
+  title: "ActiPay Fitness - Member & Payment Tracker",
+  description: "Stop paying flat SaaS fees. Pay only for active customers with ActiPay.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ActiPay",
+    title: "ActiPay Fitness",
   },
   icons: {
     icon: "/icon.svg",

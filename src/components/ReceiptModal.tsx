@@ -110,7 +110,7 @@ export default function ReceiptModal({ payment, gymName, gymPhone, onClose }: Re
           </div>
 
           <div className="mt-8 text-center text-[10px] text-slate-400 font-medium">
-            Generated via ActiPay
+            Generated via ActiPay Fitness
           </div>
         </div>
 

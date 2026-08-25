@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Activity, ArrowRight, CheckCircle2, Menu, X, BarChart3, Users, MessageSquare, CreditCard, ChevronDown, Dumbbell, Car } from "lucide-react";
+import { Activity, ArrowRight, CheckCircle2, Menu, X, BarChart3, Users, MessageSquare, CreditCard } from "lucide-react";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProductsOpen, setIsProductsOpen] = useState(false);
+
 
   useEffect(() => {
     if (!loading && user) {
@@ -61,7 +61,7 @@ export default function Home() {
                 <Activity className="h-5 w-5" />
               </div>
               <div className="flex flex-col">
-                <span className="leading-none">ActiPay</span>
+                <span className="leading-none">ActiPay Fitness</span>
                 <span className="text-[9px] text-slate-500 tracking-wide mt-0.5 uppercase">PAY PER ACTIVE</span>
               </div>
             </div>
@@ -71,24 +71,6 @@ export default function Home() {
               <a href="#features" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Features</a>
               <a href="#pricing" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Pricing</a>
               
-              {/* Products Dropdown */}
-              <div className="relative group">
-                <button 
-                  className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-blue-600 transition py-2"
-                  onClick={() => setIsProductsOpen(!isProductsOpen)}
-                >
-                  Products <ChevronDown className="h-4 w-4" />
-                </button>
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden">
-                  <Link href="/login" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 font-medium border-b border-slate-100">
-                    <Dumbbell className="h-4 w-4" /> Fitness Tracker
-                  </Link>
-                  <div className="flex items-center gap-3 px-4 py-3 text-sm text-slate-400 font-medium cursor-not-allowed bg-slate-50">
-                    <Car className="h-4 w-4" /> Car Wash Tracker <span className="text-[9px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded">SOON</span>
-                  </div>
-                </div>
-              </div>
-
               <div className="flex items-center gap-3 border-l border-slate-200 pl-8">
                 <Link href="/login" className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition">
                   Sign In
@@ -117,16 +99,6 @@ export default function Home() {
             <div className="px-4 pt-2 pb-6 space-y-1">
               <a href="#features" className="block px-3 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Features</a>
               <a href="#pricing" className="block px-3 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Pricing</a>
-              
-              <div className="px-3 py-3 bg-slate-50 rounded-lg border border-slate-100 my-2">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Our Products</p>
-                <Link href="/login" className="flex items-center justify-between text-base font-medium text-blue-600 hover:bg-blue-50 p-2 -mx-2 rounded-lg">
-                  <div className="flex items-center gap-2"><Dumbbell className="h-5 w-5" /> Fitness Tracker</div> <ArrowRight className="h-4 w-4" />
-                </Link>
-                <div className="flex items-center justify-between text-base font-medium text-slate-400 p-2 -mx-2 mt-1">
-                  <div className="flex items-center gap-2"><Car className="h-5 w-5" /> Car Wash Tracker</div> <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded-full font-bold">SOON</span>
-                </div>
-              </div>
 
               <div className="pt-4 mt-2 border-t border-slate-100 flex flex-col gap-2">
                 <Link href="/login" className="block text-center w-full px-4 py-3 text-base font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50">
@@ -158,7 +130,7 @@ export default function Home() {
           </h1>
           
           <p className="mt-6 text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Built exclusively for small-scale owners. Throw away the book and pen. Stop paying flat monthly software fees for tools you barely use. With ActiPay, you only pay for customers who actually do business with you.
+            Built exclusively for small-scale owners. Throw away the book and pen. Stop paying flat monthly software fees for tools you barely use. With ActiPay Fitness, you only pay for customers who actually do business with you.
           </p>
           
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
@@ -198,13 +170,8 @@ export default function Home() {
       <section id="pricing" className="py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center justify-center p-1 bg-slate-800 rounded-xl mb-8 border border-slate-700">
-              <button className="px-6 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold shadow-md">Fitness Tracker</button>
-              <button className="px-6 py-2.5 rounded-lg text-slate-400 text-sm font-bold cursor-not-allowed flex items-center gap-2">Car Wash Tracker <span className="text-[9px] bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">SOON</span></button>
-            </div>
-            
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Fitness Tracker AMC Pricing</h2>
-            <p className="text-slate-400 text-lg">Buy Active Member Credits (AMC) in bulk. 1 AMC = 1 Month of Active Customer Tracking.<br/><span className="text-slate-500 text-sm mt-2 block">*Car Wash Tracker will feature micro-transaction pricing (per-vehicle) to match your revenue scale.</span></p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">ActiPay Fitness AMC Pricing</h2>
+            <p className="text-slate-400 text-lg">Buy Active Member Credits (AMC) in bulk. 1 AMC = 1 Month of Active Member Tracking.</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -273,9 +240,9 @@ export default function Home() {
       <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-sm text-center">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center gap-2 font-bold text-lg text-white mb-4">
-            <Activity className="h-5 w-5" /> ActiPay.Online
+            <Activity className="h-5 w-5" /> fitness.actipay.online
           </div>
-          <p>© {new Date().getFullYear()} ActiPay. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ActiPay Fitness. All rights reserved.</p>
         </div>
       </footer>
     </main>

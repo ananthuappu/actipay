@@ -91,11 +91,11 @@ export default function PwaInstallPrompt() {
         </button>
         
         <div className="bg-blue-100 p-3 rounded-2xl flex-shrink-0">
-          <img src="/icon.svg" alt="ActiPay" className="h-10 w-10 rounded-xl" />
+          <img src="/icon.svg" alt="ActiPay Fitness" className="h-10 w-10 rounded-xl" />
         </div>
         
         <div className="flex-1">
-          <h3 className="font-bold text-slate-900 leading-tight">Install ActiPay</h3>
+          <h3 className="font-bold text-slate-900 leading-tight">Install ActiPay Fitness</h3>
           <p className="text-xs text-slate-600 mt-1 leading-snug">
             Install this app for quick access and offline mode.
           </p>

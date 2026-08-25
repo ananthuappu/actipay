@@ -24,9 +24,9 @@ export default function RechargeModal({ isOpen, onClose, reason }: RechargeModal
 
   const handleWhatsAppRecharge = () => {
     const pack = packs[selectedPack];
-    const message = `Hi! I want to recharge my ActiPay wallet with the ${pack.amc} AMC Pack (${pack.price}) for my business ${
-      gym?.name || "My Business"
-    }. Please share your UPI details.`;
+    const message = `Hi! I want to recharge my ActiPay Fitness wallet with the ${pack.amc} AMC Pack (${pack.price}) for my business ${
+      gym?.name || ""
+    } (${gym?.phone || ""}). Please share your UPI details.`;
     const waUrl = `https://wa.me/918921376778?text=${encodeURIComponent(message)}`;
     window.open(waUrl, "_blank");
   };
