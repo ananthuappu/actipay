@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   ShieldCheck,
 } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 
 export default function AdminPage() {
   const { user, gym, loading } = useAuth();
@@ -323,6 +324,13 @@ export default function AdminPage() {
                       <div className="flex items-center gap-1.5">
                         <Building2 className="h-4 w-4 text-slate-400" />
                         <h3 className="font-bold text-sm text-slate-900">{gym.name}</h3>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest ml-1 ${
+                          gym.subscriptionPlan === "PAID" 
+                            ? "bg-emerald-100 text-emerald-700" 
+                            : "bg-amber-100 text-amber-700"
+                        }`}>
+                          {gym.subscriptionPlan || "TRIAL"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
                         <span className="flex items-center gap-1">
@@ -407,6 +415,7 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <BottomNav />
     </div>
   );
 }

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserCheck, ReceiptText } from "lucide-react";
+import { LayoutDashboard, Users, UserCheck, ReceiptText, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { gym } = useAuth();
 
   const navItems = [
     {
@@ -30,9 +32,17 @@ export default function BottomNav() {
     },
   ];
 
+  if (gym?.role === "admin") {
+    navItems.push({
+      label: "Admin",
+      href: "/admin",
+      icon: ShieldCheck,
+    });
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg">
-      <div className="max-w-md mx-auto grid grid-cols-4 py-2 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg pb-safe">
+      <div className={`max-w-md mx-auto grid py-2 px-2 ${navItems.length === 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
