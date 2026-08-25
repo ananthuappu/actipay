@@ -128,7 +128,17 @@ export default function DashboardPage() {
       (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (diffDays < 0) return { label: "OVERDUE", color: "bg-red-100 text-red-700 border-red-200" };
+    if (diffDays < 0) {
+      const absDiff = Math.abs(diffDays);
+      const monthsOverdue = Math.floor(absDiff / 30);
+      let label = "OVERDUE";
+      if (monthsOverdue > 0) {
+        label += ` (${monthsOverdue} MO)`;
+      } else {
+        label += ` (${absDiff} D)`;
+      }
+      return { label, color: "bg-red-100 text-red-700 border-red-200" };
+    }
     if (diffDays <= 3) return { label: "DUE SOON", color: "bg-amber-100 text-amber-700 border-amber-200" };
     return { label: "ACTIVE", color: "bg-emerald-100 text-emerald-700 border-emerald-200" };
   };

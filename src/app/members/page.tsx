@@ -49,6 +49,7 @@ export default function MembersPage() {
   const [editPlan, setEditPlan] = useState<PlanType>("Monthly");
   const [editFee, setEditFee] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
   const [editIsPT, setEditIsPT] = useState(false);
 
   useEffect(() => {
@@ -61,34 +62,43 @@ export default function MembersPage() {
     if (!user) return;
     setLoadingData(true);
     try {
-      // 1. Fetch Members
+      // 1. Fetch all members
       const q = query(
         collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS),
         orderBy("createdAt", "desc")
       );
-      const snap = await getDocs(q);
+      const querySnapshot = await getDocs(q);
       const list: Member[] = [];
-      snap.forEach((d) => {
-        list.push({ id: d.id, ...(d.data() as any) });
+      const memberIds: string[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...(docSnap.data() as any) });
+        memberIds.push(docSnap.id);
       });
       setMembers(list);
 
-      // 2. Fetch Attendance to compute last attendance date for each member
-      const attSnap = await getDocs(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE)
+      // 2. Fetch latest attendance for active members to find absences
+      const attendanceMap: Record<string, string> = {};
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysStr = thirtyDaysAgo.toISOString().split("T")[0];
+
+      const attQuery = query(
+        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
+        where("date", ">=", thirtyDaysStr),
+        orderBy("date", "desc")
       );
-      const attMap: Record<string, string> = {};
+      const attSnap = await getDocs(attQuery);
+      
       attSnap.forEach((d) => {
-        const att = d.data();
-        if (att.memberId && att.date) {
-          if (!attMap[att.memberId] || att.date > attMap[att.memberId]) {
-            attMap[att.memberId] = att.date;
-          }
+        const data = d.data();
+        if (!attendanceMap[data.memberId]) {
+          attendanceMap[data.memberId] = data.date;
         }
       });
-      setLastAttendanceMap(attMap);
+      
+      setLastAttendanceMap(attendanceMap);
     } catch (err) {
-      console.error("Error fetching members:", err);
+      console.error("Error fetching data:", err);
     } finally {
       setLoadingData(false);
     }
@@ -101,10 +111,11 @@ export default function MembersPage() {
   }, [user]);
 
   // Dynamic Inactivity / Absence Days Calculation
-  const getDaysAbsent = (member: Member) => {
+  const getDaysAbsent = (m: Member) => {
     const today = new Date();
-    // Use last attendance date, or fall back to membership start date
-    const lastActiveDateStr = lastAttendanceMap[member.id] || member.startDate;
+    today.setHours(0, 0, 0, 0);
+
+    const lastActiveDateStr = lastAttendanceMap[m.id] || m.startDate;
     if (!lastActiveDateStr) return 0;
 
     const lastActive = new Date(lastActiveDateStr);
@@ -120,6 +131,7 @@ export default function MembersPage() {
     setEditPlan(m.planType);
     setEditFee(String(m.feeAmount));
     setEditDueDate(m.nextDueDate);
+    setEditStartDate(m.startDate || "");
     setEditIsPT(m.isPT || false);
   };
 
@@ -135,6 +147,7 @@ export default function MembersPage() {
           phone: editPhone.trim().replace(/\D/g, ""),
           planType: editPlan,
           feeAmount: Number(editFee),
+          startDate: editStartDate,
           nextDueDate: editDueDate,
           isPT: editIsPT,
         }
@@ -487,15 +500,27 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Next Due Date</label>
-                <input
-                  type="date"
-                  required
-                  value={editDueDate}
-                  onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Joining Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Next Due Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-2">

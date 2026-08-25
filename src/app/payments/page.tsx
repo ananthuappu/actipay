@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { COLLECTIONS } from "@/lib/constants";
 import { PaymentRecord } from "@/types";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
 import {
@@ -21,7 +21,9 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
-  Download
+  Download,
+  Edit2,
+  X
 } from "lucide-react";
 import ReceiptModal from "@/components/ReceiptModal";
 
@@ -37,6 +39,12 @@ export default function PaymentsPage() {
   const [customEnd, setCustomEnd] = useState("");
   const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentRecord | null>(null);
+
+  // Edit Payment State
+  const [editingPayment, setEditingPayment] = useState<PaymentRecord | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editMode, setEditMode] = useState<string>("");
+  const [editDate, setEditDate] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -196,7 +204,45 @@ export default function PaymentsPage() {
     };
   }, [payments, thisMonthStr, ptMemberIds, today]);
 
+  const handleEditPayment = (p: PaymentRecord) => {
+    setEditingPayment(p);
+    setEditAmount(String(p.amount));
+    setEditMode(p.paymentMode);
+    setEditDate(p.paymentDate);
+  };
 
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingPayment) return;
+
+    try {
+      await updateDoc(
+        doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS, editingPayment.id),
+        {
+          amount: Number(editAmount),
+          paymentMode: editMode,
+          paymentDate: editDate,
+        }
+      );
+      
+      // Update local state to avoid full refetch
+      setPayments(prev => prev.map(p => {
+        if (p.id === editingPayment.id) {
+          return {
+            ...p,
+            amount: Number(editAmount),
+            paymentMode: editMode as any,
+            paymentDate: editDate,
+          };
+        }
+        return p;
+      }));
+      
+      setEditingPayment(null);
+    } catch (err) {
+      console.error("Error updating payment:", err);
+    }
+  };
   if (loading || loadingData || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -463,6 +509,13 @@ export default function PaymentsPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button 
+                      onClick={() => handleEditPayment(payment)}
+                      className="flex items-center gap-1 text-[9px] bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-slate-600 px-2 py-1 rounded transition border border-slate-200 hover:border-amber-200 font-semibold"
+                      title="Edit Payment"
+                    >
+                      <Edit2 className="h-3 w-3" /> Edit
+                    </button>
+                    <button 
                       onClick={() => setSelectedReceipt(payment)}
                       className="flex items-center gap-1 text-[9px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 px-2 py-1 rounded transition border border-slate-200 hover:border-blue-200 font-semibold"
                       title="Generate Receipt"
@@ -479,6 +532,67 @@ export default function PaymentsPage() {
 
       {/* Persistent Bottom Navigation */}
       <BottomNav />
+
+      {editingPayment && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="font-bold text-slate-900">Edit Payment</h2>
+              <button
+                onClick={() => setEditingPayment(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Amount (₹)</label>
+                <input
+                  type="number"
+                  required
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Payment Mode</label>
+                <select
+                  value={editMode}
+                  onChange={(e) => setEditMode(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  required
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-xs mt-2"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {selectedReceipt && (
         <ReceiptModal
