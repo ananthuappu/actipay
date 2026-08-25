@@ -59,10 +59,18 @@ export default function PaymentsPage() {
       if (!user) return;
       setLoadingData(true);
       try {
-        // Fetch Members for PT mapping
-        const membersSnap = await getDocs(
+        // Run both queries concurrently
+        const membersPromise = getDocs(
           collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
         );
+        const paymentsQuery = query(
+          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
+          orderBy("paymentDate", "desc")
+        );
+        const paymentsPromise = getDocs(paymentsQuery);
+
+        const [membersSnap, paymentsSnap] = await Promise.all([membersPromise, paymentsPromise]);
+
         const ptIds = new Set<string>();
         membersSnap.forEach((d) => {
           const data = d.data();
@@ -70,14 +78,8 @@ export default function PaymentsPage() {
         });
         setPtMemberIds(ptIds);
 
-        // Fetch Payments
-        const q = query(
-          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
-          orderBy("paymentDate", "desc")
-        );
-        const snap = await getDocs(q);
         const list: PaymentRecord[] = [];
-        snap.forEach((d) => {
+        paymentsSnap.forEach((d) => {
           list.push({ id: d.id, ...(d.data() as any) });
         });
         setPayments(list);

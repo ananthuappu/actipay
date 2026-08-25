@@ -47,10 +47,19 @@ export default function AttendancePage() {
     if (!user) return;
     setLoadingData(true);
     try {
-      // 1. Fetch active members
-      const membersSnap = await getDocs(
+      // Run both queries concurrently
+      const membersPromise = getDocs(
         collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
       );
+      
+      const attQuery = query(
+        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
+        where("date", "==", todayStr)
+      );
+      const attPromise = getDocs(attQuery);
+
+      const [membersSnap, attSnap] = await Promise.all([membersPromise, attPromise]);
+
       const mList: Member[] = [];
       membersSnap.forEach((d) => {
         const data = d.data();
@@ -73,12 +82,6 @@ export default function AttendancePage() {
       });
       setMembers(mList);
 
-      // 2. Fetch today's attendance logs
-      const attQuery = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
-        where("date", "==", todayStr)
-      );
-      const attSnap = await getDocs(attQuery);
       const aList: AttendanceRecord[] = [];
       attSnap.forEach((d) => {
         const data = d.data();

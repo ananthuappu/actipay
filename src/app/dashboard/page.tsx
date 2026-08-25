@@ -20,6 +20,7 @@ import {
   writeBatch,
   query,
   orderBy,
+  runTransaction,
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
@@ -188,19 +189,12 @@ export default function DashboardPage() {
     if (!user) return;
 
     const requiredAmcs = PLAN_DURATIONS[newPlan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
-    const currentBalance = gym?.walletBalance || 0;
-
-    if (currentBalance < requiredAmcs) {
-      setRechargeReason(`Adding a ${newPlan} member requires ${requiredAmcs} AMCs. You only have ${currentBalance} AMCs.`);
-      setIsRechargeModalOpen(true);
-      return;
-    }
 
     const calculatedDueDate = calculateNextDueDate(newStartDate, newPlan, newStartDate);
     const planFeeNum = Number(newFee) || 0;
     const admissionFeeNum = Number(newAdmissionFee) || 0;
 
-      const memberData = {
+    const memberData = {
       fullName: newFullName.trim(),
       phone: newPhone.trim().replace(/\D/g, ""),
       planType: newPlan,
@@ -214,16 +208,31 @@ export default function DashboardPage() {
     };
 
     try {
-      const memberRef = await addDoc(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS),
-        memberData
-      );
+      await runTransaction(db, async (transaction) => {
+        const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+        const gymDoc = await transaction.get(gymRef);
+        
+        if (!gymDoc.exists()) {
+          throw new Error("Gym document not found");
+        }
+        
+        const currentBalance = gymDoc.data().walletBalance || 0;
+        
+        if (currentBalance < requiredAmcs) {
+          throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
+        }
 
-      // 1. Log the Registration / Advance Fee (if > 0)
-      if (admissionFeeNum > 0) {
-        await addDoc(
-          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
-          {
+        // 1. Generate refs
+        const memberRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS));
+        const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
+        const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
+
+        // 2. Set Member
+        transaction.set(memberRef, memberData);
+
+        // 3. Log Admission Fee (if any)
+        if (admissionFeeNum > 0) {
+          transaction.set(admissionPaymentRef, {
             memberId: memberRef.id,
             memberName: `${newFullName.trim()} (Admission / Advance)`,
             amount: admissionFeeNum,
@@ -234,14 +243,11 @@ export default function DashboardPage() {
             validUntil: "-",
             loggedBy: user.uid,
             createdAt: new Date().toISOString(),
-          }
-        );
-      }
+          });
+        }
 
-      // 2. Log the First Month Plan Payment
-      await addDoc(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
-        {
+        // 4. Log Membership Fee
+        transaction.set(membershipPaymentRef, {
           memberId: memberRef.id,
           memberName: newFullName.trim(),
           amount: planFeeNum,
@@ -252,12 +258,12 @@ export default function DashboardPage() {
           validUntil: calculatedDueDate,
           loggedBy: user.uid,
           createdAt: new Date().toISOString(),
-        }
-      );
+        });
 
-      // 3. Deduct AMCs from Wallet
-      await updateDoc(doc(db, COLLECTIONS.GYMS, user.uid), {
-        walletBalance: currentBalance - requiredAmcs
+        // 5. Deduct AMCs
+        transaction.update(gymRef, {
+          walletBalance: currentBalance - requiredAmcs
+        });
       });
 
       setIsAddModalOpen(false);
@@ -266,8 +272,14 @@ export default function DashboardPage() {
       setNewAdmissionFee("0");
       setNewIsPT(false);
       fetchMembers();
-    } catch (err) {
-      console.error("Failed to add member:", err);
+    } catch (err: any) {
+      if (err.message && err.message.startsWith("INSUFFICIENT_FUNDS")) {
+        const balance = err.message.split(":")[1];
+        setRechargeReason(`Adding a ${newPlan} member requires ${requiredAmcs} AMCs. You only have ${balance} AMCs.`);
+        setIsRechargeModalOpen(true);
+      } else {
+        console.error("Failed to add member:", err);
+      }
     }
   };
 
@@ -296,22 +308,30 @@ export default function DashboardPage() {
     if (!user || !selectedMember) return;
 
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
-    const currentBalance = gym?.walletBalance || 0;
-
-    if (currentBalance < requiredAmcs) {
-      setRechargeReason(`Renewing for ${planExtension} requires ${requiredAmcs} AMCs. You only have ${currentBalance} AMCs.`);
-      setIsRechargeModalOpen(true);
-      return;
-    }
 
     const today = new Date().toISOString().split("T")[0];
     const baseDate = selectedMember.nextDueDate > today ? selectedMember.nextDueDate : today;
     const newDueDate = calculateNextDueDate(baseDate, planExtension, selectedMember.startDate);
 
     try {
-      await addDoc(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
-        {
+      await runTransaction(db, async (transaction) => {
+        const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+        const gymDoc = await transaction.get(gymRef);
+        
+        if (!gymDoc.exists()) {
+          throw new Error("Gym document not found");
+        }
+        
+        const currentBalance = gymDoc.data().walletBalance || 0;
+        
+        if (currentBalance < requiredAmcs) {
+          throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
+        }
+
+        const paymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
+        const memberRef = doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, selectedMember.id);
+
+        transaction.set(paymentRef, {
           memberId: selectedMember.id,
           memberName: selectedMember.fullName,
           amount: Number(paymentAmount),
@@ -322,28 +342,30 @@ export default function DashboardPage() {
           validUntil: newDueDate,
           loggedBy: user.uid,
           createdAt: new Date().toISOString(),
-        }
-      );
+        });
 
-      await updateDoc(
-        doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, selectedMember.id),
-        {
+        transaction.update(memberRef, {
           nextDueDate: newDueDate,
           planType: planExtension,
           isActive: true,
-        }
-      );
+        });
 
-      // Deduct AMCs from Wallet
-      await updateDoc(doc(db, COLLECTIONS.GYMS, user.uid), {
-        walletBalance: currentBalance - requiredAmcs
+        transaction.update(gymRef, {
+          walletBalance: currentBalance - requiredAmcs
+        });
       });
 
       setIsPaymentModalOpen(false);
       setSelectedMember(null);
       fetchMembers();
-    } catch (err) {
-      console.error("Failed to record payment:", err);
+    } catch (err: any) {
+      if (err.message && err.message.startsWith("INSUFFICIENT_FUNDS")) {
+        const balance = err.message.split(":")[1];
+        setRechargeReason(`Renewing for ${planExtension} requires ${requiredAmcs} AMCs. You only have ${balance} AMCs.`);
+        setIsRechargeModalOpen(true);
+      } else {
+        console.error("Failed to record payment:", err);
+      }
     }
   };
 

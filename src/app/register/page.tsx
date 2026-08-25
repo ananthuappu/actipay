@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
+  const { user, loading, refreshGymData } = useAuth();
   const [gymName, setGymName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -20,7 +21,12 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
-  const { refreshGymData } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,8 +76,10 @@ export default function RegisterPage() {
 
   return (
     <main className="flex min-h-screen flex-col justify-center px-6 py-10 sm:max-w-md sm:mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay</h1>
+      <div className="text-center mb-8 flex flex-col items-center">
+        <Link href="/" className="inline-block hover:opacity-80 transition">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay</h1>
+        </Link>
         <p className="text-sm text-slate-500 mt-1">Setup your business account in seconds</p>
       </div>
 

@@ -12,14 +12,14 @@ interface RechargeModalProps {
 
 export default function RechargeModal({ isOpen, onClose, reason }: RechargeModalProps) {
   const { gym } = useAuth();
-  const [selectedPack, setSelectedPack] = useState<"50" | "100" | "300">("100");
+  const [selectedPack, setSelectedPack] = useState<"30" | "100" | "300">("100");
 
   if (!isOpen) return null;
 
   const packs = {
-    "50": { amc: 50, price: "₹229", desc: "₹4.5 / member" },
-    "100": { amc: 100, price: "₹399", desc: "₹3.99 / member" },
-    "300": { amc: 300, price: "₹899", desc: "₹2.99 / member" },
+    "30": { amc: 30, price: "₹299", desc: "₹9.96 / member" },
+    "100": { amc: 100, price: "₹599", desc: "₹5.99 / member" },
+    "300": { amc: 300, price: "₹1,199", desc: "₹3.99 / member" },
   };
 
   const handleWhatsAppRecharge = () => {

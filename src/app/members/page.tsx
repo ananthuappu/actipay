@@ -62,22 +62,13 @@ export default function MembersPage() {
     if (!user) return;
     setLoadingData(true);
     try {
-      // 1. Fetch all members
-      const q = query(
+      // 1. Prepare Member Query
+      const memberQuery = query(
         collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS),
         orderBy("createdAt", "desc")
       );
-      const querySnapshot = await getDocs(q);
-      const list: Member[] = [];
-      const memberIds: string[] = [];
-      querySnapshot.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...(docSnap.data() as any) });
-        memberIds.push(docSnap.id);
-      });
-      setMembers(list);
 
-      // 2. Fetch latest attendance for active members to find absences
-      const attendanceMap: Record<string, string> = {};
+      // 2. Prepare Attendance Query
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysStr = thirtyDaysAgo.toISOString().split("T")[0];
@@ -87,8 +78,20 @@ export default function MembersPage() {
         where("date", ">=", thirtyDaysStr),
         orderBy("date", "desc")
       );
-      const attSnap = await getDocs(attQuery);
-      
+
+      // Execute concurrently for faster load
+      const [membersSnap, attSnap] = await Promise.all([
+        getDocs(memberQuery),
+        getDocs(attQuery)
+      ]);
+
+      const list: Member[] = [];
+      membersSnap.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...(docSnap.data() as any) });
+      });
+      setMembers(list);
+
+      const attendanceMap: Record<string, string> = {};
       attSnap.forEach((d) => {
         const data = d.data();
         if (!attendanceMap[data.memberId]) {
