@@ -12,6 +12,19 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Custom vibrant blue theme based on user reference */
+  --color-blue-50: #eef4ff;
+  --color-blue-100: #d9e6ff;
+  --color-blue-200: #bcd1ff;
+  --color-blue-300: #8eb3ff;
+  --color-blue-400: #5c8aff;
+  --color-blue-500: #3366ff;
+  --color-blue-600: #0047ff;
+  --color-blue-700: #0038cc;
+  --color-blue-800: #002da3;
+  --color-blue-900: #002485;
+  --color-blue-950: #00165c;
 }
 
 body {

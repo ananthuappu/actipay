@@ -224,7 +224,7 @@ export default function AdminPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+            <span className="p-2 bg-indigo-600 text-white rounded-3xl shadow-xs">
               <ShieldCheck className="h-5 w-5" />
             </span>
             <h1 className="text-xl font-black text-slate-900">Admin Control Center</h1>
@@ -234,11 +234,11 @@ export default function AdminPage() {
 
         {/* Global Stats */}
         <div className="flex gap-2">
-          <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs">
+          <div className="bg-white px-3.5 py-2 rounded-3xl border border-slate-200 shadow-xs">
             <p className="text-[10px] uppercase font-bold text-slate-400">Total Gyms</p>
             <p className="text-base font-black text-slate-900">{gyms.length}</p>
           </div>
-          <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs">
+          <div className="bg-white px-3.5 py-2 rounded-3xl border border-slate-200 shadow-xs">
             <p className="text-[10px] uppercase font-bold text-indigo-500">Active Tokens</p>
             <p className="text-base font-black text-indigo-600">{totalTokensCirculating}</p>
           </div>
@@ -247,7 +247,7 @@ export default function AdminPage() {
 
       {/* Floating Status Toast */}
       {statusMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-3xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           <span>{statusMessage}</span>
         </div>
@@ -273,7 +273,7 @@ export default function AdminPage() {
           <button
             onClick={handleDeleteExpired}
             disabled={deleting}
-            className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-red-600 font-bold text-white text-xs shadow-xs hover:bg-red-700 transition disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-full bg-red-600 font-bold text-white text-xs shadow-xs hover:bg-red-700 transition disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {deleting ? "Purging Accounts..." : `Purge ${expiredGyms.length} Expired Gym Accounts`}
@@ -298,7 +298,7 @@ export default function AdminPage() {
             placeholder="Search gym by name, phone, or Gym ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-3xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs"
           />
         </div>
 

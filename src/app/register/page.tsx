@@ -75,17 +75,23 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col justify-center px-6 py-10 sm:max-w-md sm:mx-auto">
-      <div className="text-center mb-8 flex flex-col items-center">
-        <Link href="/" className="inline-block hover:opacity-80 transition">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">ActiPay Fitness</h1>
-        </Link>
-        <p className="text-sm text-slate-500 mt-1">Setup your business account in seconds</p>
+    <main className="flex min-h-[100dvh] flex-col justify-center px-6 py-10 bg-blue-600 sm:max-w-md sm:mx-auto sm:shadow-2xl relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-blue-500/40 blur-3xl"></div>
+        <div className="absolute bottom-10 -left-20 w-64 h-64 rounded-full bg-blue-700/40 blur-3xl"></div>
       </div>
 
-      <form onSubmit={handleRegister} className="space-y-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="text-center mb-6 flex flex-col items-center relative z-10">
+        <Link href="/" className="inline-block hover:scale-105 transition-transform">
+          <h1 className="text-4xl font-black tracking-tight text-white drop-shadow-md">ActiPay</h1>
+        </Link>
+        <p className="text-sm text-blue-100 mt-2 font-medium">Setup your business account in seconds</p>
+      </div>
+
+      <form onSubmit={handleRegister} className="space-y-4 bg-white p-6 sm:p-8 rounded-[2rem] shadow-xl border border-white relative z-10">
         {error && (
-          <div className="p-3 text-xs bg-red-50 text-red-700 rounded-lg border border-red-200">
+          <div className="p-3 text-xs bg-red-50 text-red-700 rounded-2xl border border-red-200">
             {error}
           </div>
         )}
@@ -98,7 +104,7 @@ export default function RegisterPage() {
             placeholder="e.g. Iron & Steel Fitness"
             value={gymName}
             onChange={(e) => setGymName(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -110,7 +116,7 @@ export default function RegisterPage() {
             placeholder="e.g. 9876543210"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -122,7 +128,7 @@ export default function RegisterPage() {
             placeholder="owner@gym.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -136,7 +142,7 @@ export default function RegisterPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-300 pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"

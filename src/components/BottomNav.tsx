@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserCheck, ReceiptText, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, UserCheck, ReceiptText, ShieldCheck, Headset } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function BottomNav() {
@@ -30,6 +30,12 @@ export default function BottomNav() {
       href: "/payments",
       icon: ReceiptText,
     },
+    {
+      label: "Support",
+      href: "mailto:gympaysupport@gmail.com?subject=Support%20Request%20-%20ActiPay",
+      icon: Headset,
+      isExternal: true,
+    },
   ];
 
   if (gym?.role === "admin") {
@@ -40,25 +46,34 @@ export default function BottomNav() {
     });
   }
 
+  // Generate grid column class dynamically
+  const gridColsClass = navItems.length === 6 ? "grid-cols-6" : "grid-cols-5";
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg pb-safe">
-      <div className={`max-w-md mx-auto grid py-2 px-2 ${navItems.length === 5 ? 'grid-cols-5' : 'grid-cols-4'}`}>
+    <nav className="fixed bottom-6 left-4 right-4 z-40 max-w-sm mx-auto">
+      <div className="bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-4 py-3 flex items-center justify-between border border-slate-100">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
+          const activeClasses = "bg-blue-600 text-white shadow-md shadow-blue-200/50";
+          const inactiveClasses = "text-slate-400 hover:bg-slate-50 hover:text-slate-600";
+          
+          const classes = `flex items-center justify-center h-12 w-12 rounded-full transition-all duration-300 active:scale-95 ${
+            isActive ? activeClasses : inactiveClasses
+          }`;
+
+          if (item.isExternal) {
+            return (
+              <a key={item.href} href={item.href} className={classes}>
+                <Icon className={`h-6 w-6 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
+              </a>
+            );
+          }
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 py-1 rounded-xl transition active:scale-95 ${
-                isActive
-                  ? "text-blue-600 font-semibold"
-                  : "text-slate-400 hover:text-slate-600 font-medium"
-              }`}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
-              <span className="text-[10px] leading-tight">{item.label}</span>
+            <Link key={item.href} href={item.href} className={classes}>
+              <Icon className={`h-6 w-6 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
             </Link>
           );
         })}

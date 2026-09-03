@@ -77,7 +77,7 @@ export default function DashboardPage() {
   const [newFee, setNewFee] = useState("1500");
   const [newAdmissionFee, setNewAdmissionFee] = useState("500");
   const [newStartDate, setNewStartDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]
   );
   const [newIsPT, setNewIsPT] = useState(false);
 
@@ -122,7 +122,7 @@ export default function DashboardPage() {
 
   // Dynamic Status Calculation (Keeps Firebase $0 spark friendly)
   const getStatus = (nextDueDate: string) => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
     const due = new Date(nextDueDate);
     const now = new Date(today);
     const diffDays = Math.ceil(
@@ -173,7 +173,8 @@ export default function DashboardPage() {
   };
 
   const calculateOwedAmount = (member: Member) => {
-    const today = new Date();
+    const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
+    const today = new Date(todayStr);
     const due = new Date(member.nextDueDate);
     const diffTime = today.getTime() - due.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -312,7 +313,7 @@ export default function DashboardPage() {
 
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
     const baseDate = selectedMember.nextDueDate > today ? selectedMember.nextDueDate : today;
     const newDueDate = calculateNextDueDate(baseDate, planExtension, selectedMember.startDate);
 
@@ -547,7 +548,7 @@ export default function DashboardPage() {
 
       {/* Metrics Section */}
       <section className="p-4 grid grid-cols-3 gap-2">
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs relative">
+        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs relative">
           <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
             <Users className="h-3.5 w-3.5 text-blue-600" /> Active
           </div>
@@ -558,13 +559,13 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center gap-1.5 text-amber-600 text-xs font-semibold mb-1">
             <Clock className="h-3.5 w-3.5" /> Due Soon
           </div>
           <p className="text-xl font-bold text-amber-600">{dueSoonCount}</p>
         </div>
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center gap-1.5 text-red-600 text-xs font-semibold mb-1">
             <AlertCircle className="h-3.5 w-3.5" /> Overdue
           </div>
@@ -592,7 +593,7 @@ export default function DashboardPage() {
       {/* Member Cards List */}
       <main className="p-4 space-y-3">
         {filteredMembers.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300 p-6">
+          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 p-6">
             <Users className="h-8 w-8 text-slate-400 mx-auto mb-2" />
             <p className="text-sm font-semibold text-slate-700">No members found</p>
             <p className="text-xs text-slate-500 mt-1">
@@ -605,7 +606,7 @@ export default function DashboardPage() {
             return (
               <div
                 key={member.id}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3"
+                className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3"
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -646,7 +647,7 @@ export default function DashboardPage() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => sendWhatsAppReminder(member)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition active:scale-95"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition active:scale-95"
                   >
                     <Send className="h-3.5 w-3.5" /> WhatsApp
                   </button>
@@ -656,7 +657,7 @@ export default function DashboardPage() {
                       setPaymentAmount(String(calculateOwedAmount(member)));
                       setIsPaymentModalOpen(true);
                     }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition active:scale-95 shadow-xs"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-full bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition active:scale-95 shadow-xs"
                   >
                     <CreditCard className="h-3.5 w-3.5" /> 
                     {status.label === "ACTIVE" ? "Extend" : "Pay"}
@@ -716,7 +717,7 @@ export default function DashboardPage() {
                   placeholder="e.g. John Doe"
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -730,7 +731,7 @@ export default function DashboardPage() {
                   placeholder="e.g. 9876543210"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -740,7 +741,7 @@ export default function DashboardPage() {
                   <select
                     value={newPlan}
                     onChange={(e) => setNewPlan(e.target.value as PlanType)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Monthly">Monthly</option>
                     <option value="Quarterly">Quarterly (3 Mo)</option>
@@ -755,7 +756,7 @@ export default function DashboardPage() {
                     required
                     value={newFee}
                     onChange={(e) => setNewFee(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -769,7 +770,7 @@ export default function DashboardPage() {
                   placeholder="0 if none"
                   value={newAdmissionFee}
                   onChange={(e) => setNewAdmissionFee(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -780,7 +781,7 @@ export default function DashboardPage() {
                   required
                   value={newStartDate}
                   onChange={(e) => setNewStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -799,7 +800,7 @@ export default function DashboardPage() {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
               >
                 Save Member & Log Payment
               </button>
@@ -833,7 +834,7 @@ export default function DashboardPage() {
                   required
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -843,7 +844,7 @@ export default function DashboardPage() {
                   <select
                     value={planExtension}
                     onChange={(e) => setPlanExtension(e.target.value as PlanType)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Monthly">1 Month</option>
                     <option value="Quarterly">3 Months</option>
@@ -856,7 +857,7 @@ export default function DashboardPage() {
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="UPI">UPI</option>
                     <option value="Cash">Cash</option>
@@ -868,7 +869,7 @@ export default function DashboardPage() {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
               >
                 Confirm Payment & Extend
               </button>
@@ -906,7 +907,7 @@ export default function DashboardPage() {
                 paymentHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center text-xs"
+                    className="p-3 bg-slate-50 rounded-3xl border border-slate-100 flex justify-between items-center text-xs"
                   >
                     <div>
                       <p className="font-semibold text-slate-800">₹{item.amount}</p>
@@ -949,7 +950,7 @@ export default function DashboardPage() {
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -960,7 +961,7 @@ export default function DashboardPage() {
                   required
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
@@ -978,7 +979,7 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={isEditingProfile}
-                className="w-full py-3 rounded-xl bg-blue-600 font-bold text-white shadow-md hover:bg-blue-700 transition active:scale-95 disabled:opacity-70"
+                className="w-full py-3 rounded-full bg-blue-600 font-bold text-white shadow-md hover:bg-blue-700 transition active:scale-95 disabled:opacity-70"
               >
                 {isEditingProfile ? "Saving..." : "Save Changes"}
               </button>
@@ -1008,7 +1009,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-600 leading-relaxed bg-red-50 p-3.5 rounded-xl border border-red-200">
+            <div className="space-y-2 text-xs text-slate-600 leading-relaxed bg-red-50 p-3.5 rounded-3xl border border-red-200">
               <p className="font-bold text-red-800">Permanent Data Loss Warning</p>
               <p>
                 This action will permanently delete <strong>{gym?.name || "your gym"}</strong>, including:
@@ -1032,7 +1033,7 @@ export default function DashboardPage() {
                   placeholder="Enter your account password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  className="w-full rounded-3xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
                 />
               </div>
 
@@ -1045,7 +1046,7 @@ export default function DashboardPage() {
                   placeholder="DELETE"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold tracking-wider uppercase focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  className="w-full rounded-3xl border border-slate-300 px-3 py-2 text-sm font-semibold tracking-wider uppercase focus:ring-2 focus:ring-red-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -1058,7 +1059,7 @@ export default function DashboardPage() {
                   setDeleteConfirmText("");
                   setDeletePassword("");
                 }}
-                className="flex-1 py-3 rounded-xl border border-slate-200 font-semibold text-xs text-slate-600 hover:bg-slate-50 transition"
+                className="flex-1 py-3 rounded-3xl border border-slate-200 font-semibold text-xs text-slate-600 hover:bg-slate-50 transition"
               >
                 Cancel
               </button>
@@ -1070,7 +1071,7 @@ export default function DashboardPage() {
                   isDeleting
                 }
                 onClick={handleDeleteGymAccount}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                className="flex-1 py-3 rounded-full bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
               >
                 {isDeleting ? "Deleting Everything..." : "Delete Permanently"}
               </button>

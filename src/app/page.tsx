@@ -101,10 +101,10 @@ export default function Home() {
               <a href="#pricing" className="block px-3 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Pricing</a>
 
               <div className="pt-4 mt-2 border-t border-slate-100 flex flex-col gap-2">
-                <Link href="/login" className="block text-center w-full px-4 py-3 text-base font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50">
-                  Sign In
+                <Link href="/login" className="block text-center w-full px-4 py-3 text-base font-medium text-slate-700 border border-slate-300 rounded-full hover:bg-slate-50">
+                  Log in
                 </Link>
-                <Link href="/register" className="block text-center w-full px-4 py-3 text-base font-medium text-white bg-blue-600 rounded-xl shadow-sm hover:bg-blue-700">
+                <Link href="/register" className="block text-center w-full px-4 py-3 text-base font-medium text-white bg-blue-600 rounded-full shadow-sm hover:bg-blue-700">
                   Start Free Trial
                 </Link>
               </div>
@@ -190,7 +190,7 @@ export default function Home() {
                   <CheckCircle2 className="h-5 w-5 text-blue-500" /> Never expires
                 </li>
               </ul>
-              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-xl font-bold text-white bg-slate-700 hover:bg-slate-600 transition">Get Started</Link>
+              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-full font-bold text-white bg-slate-700 hover:bg-slate-600 transition">Get Started</Link>
             </div>
 
             {/* 100 AMC */}
@@ -212,7 +212,7 @@ export default function Home() {
                   <CheckCircle2 className="h-5 w-5 text-emerald-400" /> Priority Support
                 </li>
               </ul>
-              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-xl font-bold text-blue-700 bg-white hover:bg-slate-50 transition shadow-lg">Start Free Trial</Link>
+              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-full font-bold text-blue-700 bg-white hover:bg-slate-50 transition shadow-lg">Start Free Trial</Link>
             </div>
 
             {/* 300 AMC */}
@@ -230,7 +230,7 @@ export default function Home() {
                   <CheckCircle2 className="h-5 w-5 text-blue-500" /> Never expires
                 </li>
               </ul>
-              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-xl font-bold text-white bg-slate-700 hover:bg-slate-600 transition">Get Started</Link>
+              <Link href="/register" className="block text-center w-full py-3 px-4 rounded-full font-bold text-white bg-slate-700 hover:bg-slate-600 transition">Get Started</Link>
             </div>
           </div>
         </div>

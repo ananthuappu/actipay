@@ -2,7 +2,14 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export async function GET() {
+export const size = {
+  width: 32,
+  height: 32,
+};
+
+export const contentType = 'image/png';
+
+export default function Icon() {
   return new ImageResponse(
     (
       <div
@@ -13,10 +20,10 @@ export async function GET() {
           alignItems: 'center',
           justifyContent: 'center',
           background: '#0047ff',
-          borderRadius: '112px',
+          borderRadius: '8px',
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 512 512">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512">
           <path 
             d="M112 256h80l48-112 64 224 48-112h80" 
             fill="none" 
@@ -29,12 +36,7 @@ export async function GET() {
       </div>
     ),
     {
-      width: 512,
-      height: 512,
-      headers: {
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Type': 'image/png'
-      }
+      ...size,
     }
   );
 }

@@ -62,7 +62,7 @@ export default function RechargeModal({ isOpen, onClose, reason }: RechargeModal
               <button
                 key={key}
                 onClick={() => setSelectedPack(key as any)}
-                className={`border rounded-xl p-3 text-left transition relative ${
+                className={`border rounded-3xl p-3 text-left transition relative ${
                   isSelected ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
                 }`}
               >
@@ -84,7 +84,7 @@ export default function RechargeModal({ isOpen, onClose, reason }: RechargeModal
           })}
         </div>
 
-        <div className="mb-8 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div className="mb-8 space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
           <div className="flex items-start">
             <Check className="mr-3 h-4 w-4 shrink-0 text-green-500 mt-0.5" />
             <span className="text-xs text-slate-600 font-medium">1 AMC is deducted only when a member renews for 30 days.</span>
@@ -101,7 +101,7 @@ export default function RechargeModal({ isOpen, onClose, reason }: RechargeModal
 
         <button
           onClick={handleWhatsAppRecharge}
-          className="flex w-full items-center justify-center rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
+          className="flex w-full items-center justify-center rounded-3xl bg-green-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
         >
           <MessageSquare className="mr-2 h-5 w-5" />
           Recharge via WhatsApp

@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
-const inter = Inter({ subsets: ["latin"] });
+const nunito = Nunito({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#0047ff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -24,9 +24,8 @@ export const metadata: Metadata = {
     title: "ActiPay Fitness",
   },
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/api/icon",
+    apple: "/api/icon",
   },
 };
 
@@ -37,7 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen antialiased select-none`}>
+      <head>
+        <link rel="apple-touch-icon" href="/api/icon" />
+      </head>
+      <body className={`${nunito.className} bg-slate-50 text-slate-900 min-h-screen antialiased select-none`}>
         <AuthProvider>
           {children}
           <PwaInstallPrompt />

@@ -71,7 +71,7 @@ export default function MembersPage() {
       // 2. Prepare Attendance Query
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysStr = thirtyDaysAgo.toISOString().split("T")[0];
+      const thirtyDaysStr = new Date(thirtyDaysAgo.getTime() - thirtyDaysAgo.getTimezoneOffset() * 60000).toISOString().split("T")[0];
 
       const attQuery = query(
         collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
@@ -287,7 +287,7 @@ export default function MembersPage() {
 
       {/* Filter Tabs */}
       <div className="p-4 pb-2">
-        <div className="flex bg-slate-200/70 p-1 rounded-xl gap-1">
+        <div className="flex bg-slate-200/70 p-1 rounded-3xl gap-1">
           <button
             onClick={() => setStatusFilter("ACTIVE")}
             className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
@@ -335,7 +335,7 @@ export default function MembersPage() {
             placeholder="Search by name or mobile..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2 bg-white rounded-3xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -343,7 +343,7 @@ export default function MembersPage() {
       {/* Members List */}
       <main className="px-4 space-y-2.5">
         {filteredMembers.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-200 p-4">
+          <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
             <Users className="h-6 w-6 text-slate-300 mx-auto mb-1" />
             <p className="text-xs font-medium text-slate-500">
               {statusFilter === "ABSENT"
@@ -359,7 +359,7 @@ export default function MembersPage() {
             return (
               <div
                 key={m.id}
-                className={`bg-white p-3.5 rounded-xl border shadow-xs space-y-2.5 transition ${
+                className={`bg-white p-3.5 rounded-3xl border shadow-xs space-y-2.5 transition ${
                   isAbsentAlert ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
                 }`}
               >
@@ -484,7 +484,7 @@ export default function MembersPage() {
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -497,7 +497,7 @@ export default function MembersPage() {
                   required
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -507,7 +507,7 @@ export default function MembersPage() {
                   <select
                     value={editPlan}
                     onChange={(e) => setEditPlan(e.target.value as PlanType)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Monthly">Monthly</option>
                     <option value="Quarterly">Quarterly</option>
@@ -522,7 +522,7 @@ export default function MembersPage() {
                     required
                     value={editFee}
                     onChange={(e) => setEditFee(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function MembersPage() {
                     required
                     value={editStartDate}
                     onChange={handleStartDateChange}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -545,7 +545,7 @@ export default function MembersPage() {
                     required
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -565,7 +565,7 @@ export default function MembersPage() {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
               >
                 Save Changes
               </button>

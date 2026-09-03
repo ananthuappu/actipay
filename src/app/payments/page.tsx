@@ -304,7 +304,7 @@ export default function PaymentsPage() {
         {/* Expandable Analytics Toggle */}
         <button
           onClick={() => setIsAnalyticsExpanded(!isAnalyticsExpanded)}
-          className="flex items-center justify-between w-full bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-xs text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+          className="flex items-center justify-between w-full bg-white px-4 py-3 rounded-3xl border border-slate-200 shadow-xs text-sm font-bold text-slate-700 transition hover:bg-slate-50"
         >
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-blue-600" />
@@ -387,7 +387,7 @@ export default function PaymentsPage() {
 
             {/* Payment Modes Split */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs text-center">
+              <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs text-center">
                 <div className="flex items-center justify-center text-blue-600 mb-1">
                   <Wallet className="h-4 w-4" />
                 </div>
@@ -397,7 +397,7 @@ export default function PaymentsPage() {
                 </p>
               </div>
 
-              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs text-center">
+              <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs text-center">
                 <div className="flex items-center justify-center text-emerald-600 mb-1">
                   <Banknote className="h-4 w-4" />
                 </div>
@@ -407,7 +407,7 @@ export default function PaymentsPage() {
                 </p>
               </div>
 
-              <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs text-center">
+              <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs text-center">
                 <div className="flex items-center justify-center text-purple-600 mb-1">
                   <CreditCard className="h-4 w-4" />
                 </div>
@@ -448,14 +448,14 @@ export default function PaymentsPage() {
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+              className="flex-1 bg-white border border-slate-200 rounded-3xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             />
             <span className="text-slate-400 self-center text-xs">to</span>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+              className="flex-1 bg-white border border-slate-200 rounded-3xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             />
           </div>
         )}
@@ -468,14 +468,14 @@ export default function PaymentsPage() {
             placeholder="Search member name or mode..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+            className="w-full pl-9 pr-3 py-2 bg-white rounded-3xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
           />
         </div>
 
         {/* Transactions List */}
         <div className="space-y-2 pt-1">
           {filteredPayments.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-200 p-4">
+            <div className="text-center py-8 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
               <IndianRupee className="h-6 w-6 text-slate-300 mx-auto mb-1" />
               <p className="text-xs font-medium text-slate-500">No payment records found.</p>
             </div>
@@ -483,10 +483,10 @@ export default function PaymentsPage() {
             filteredPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between"
+                className="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                     <ArrowDownLeft className="h-5 w-5" />
                   </div>
                   <div>
@@ -556,7 +556,7 @@ export default function PaymentsPage() {
                   required
                   value={editAmount}
                   onChange={(e) => setEditAmount(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -565,7 +565,7 @@ export default function PaymentsPage() {
                 <select
                   value={editMode}
                   onChange={(e) => setEditMode(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="UPI">UPI</option>
                   <option value="Cash">Cash</option>
@@ -581,13 +581,13 @@ export default function PaymentsPage() {
                   required
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-xs mt-2"
+                className="w-full py-2.5 bg-blue-600 text-white text-sm font-bold rounded-3xl hover:bg-blue-700 transition shadow-xs mt-2"
               >
                 Save Changes
               </button>

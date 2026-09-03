@@ -35,7 +35,7 @@ export default function AttendancePage() {
   const [loadingData, setLoadingData] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const todayStr = useMemo(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0], []);
 
   useEffect(() => {
     if (!loading && !user) {

@@ -119,7 +119,7 @@ export default function ReceiptModal({ payment, gymName, gymPhone, onClose }: Re
           <button
             onClick={handleShareOrDownload}
             disabled={downloading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 shadow-sm"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 shadow-sm"
           >
             <Share2 className="h-4 w-4" />
             {downloading ? "Processing..." : "Share / Save Receipt"}
