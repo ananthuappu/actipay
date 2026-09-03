@@ -146,16 +146,16 @@ export default function DashboardPage() {
 
   // Helper to calculate future date anchoring to the join date
   const calculateNextDueDate = (baseDateStr: string, plan: PlanType, originalStartDateStr?: string) => {
-    const baseDate = new Date(baseDateStr);
+    const [bYear, bMonth, bDay] = baseDateStr.split("-").map(Number);
     const months = PLAN_DURATIONS[plan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
     
-    let targetMonth = baseDate.getMonth() + months;
-    let targetYear = baseDate.getFullYear();
-    let targetDay = baseDate.getDate();
+    let targetMonth = bMonth - 1 + months; // 0-indexed month
+    let targetYear = bYear;
+    let targetDay = bDay;
 
     if (originalStartDateStr) {
-      const origDate = new Date(originalStartDateStr);
-      targetDay = origDate.getDate(); // Force the day to be the join date
+      const [, , oDay] = originalStartDateStr.split("-").map(Number);
+      targetDay = oDay; // Force the day to be the join date
     }
 
     const newDate = new Date(targetYear, targetMonth, targetDay);
@@ -166,7 +166,10 @@ export default function DashboardPage() {
       newDate.setDate(0); 
     }
     
-    return newDate.toISOString().split("T")[0];
+    const year = newDate.getFullYear();
+    const month = String(newDate.getMonth() + 1).padStart(2, "0");
+    const day = String(newDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const calculateOwedAmount = (member: Member) => {
@@ -469,14 +472,14 @@ export default function DashboardPage() {
 
   const filteredMembers = members.filter((m) => {
     const status = getStatus(m.nextDueDate).label;
-    if (filter === "OVERDUE") return status === "OVERDUE";
-    if (filter === "DUE_SOON") return status === "DUE SOON" || status === "OVERDUE";
+    if (filter === "OVERDUE") return status.startsWith("OVERDUE");
+    if (filter === "DUE_SOON") return status === "DUE SOON" || status.startsWith("OVERDUE");
     return true;
   });
 
   const totalActive = members.length;
   const ptCount = members.filter((m) => m.isPT).length;
-  const overdueCount = members.filter((m) => getStatus(m.nextDueDate).label === "OVERDUE").length;
+  const overdueCount = members.filter((m) => getStatus(m.nextDueDate).label.startsWith("OVERDUE")).length;
   const dueSoonCount = members.filter((m) => getStatus(m.nextDueDate).label === "DUE SOON").length;
 
   if (loading || !user) {

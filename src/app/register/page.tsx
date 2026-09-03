@@ -53,7 +53,7 @@ export default function RegisterPage() {
         phone: cleanPhone,
         authEmail: authEmail,
         currency: "INR",
-        walletBalance: 10, // 10 Free AMCs for Trial
+        walletBalance: 100, // 100 Free AMCs for Trial
         subscriptionPlan: "TRIAL",
         role: "owner",
         createdAt: new Date().toISOString(),

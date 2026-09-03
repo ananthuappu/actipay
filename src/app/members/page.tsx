@@ -138,6 +138,30 @@ export default function MembersPage() {
     setEditIsPT(m.isPT || false);
   };
 
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStartDate = e.target.value;
+    if (editStartDate && editDueDate && newStartDate) {
+      const [oY, oM, oD] = editStartDate.split("-").map(Number);
+      const [nY, nM, nD] = newStartDate.split("-").map(Number);
+      const [dY, dM, dD] = editDueDate.split("-").map(Number);
+      
+      const oldStartUTC = Date.UTC(oY, oM - 1, oD);
+      const newStartUTC = Date.UTC(nY, nM - 1, nD);
+      
+      const diffDays = Math.round((newStartUTC - oldStartUTC) / (1000 * 60 * 60 * 24));
+      
+      if (!isNaN(diffDays)) {
+        const currentDue = new Date(dY, dM - 1, dD);
+        currentDue.setDate(currentDue.getDate() + diffDays);
+        const year = currentDue.getFullYear();
+        const month = String(currentDue.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDue.getDate()).padStart(2, "0");
+        setEditDueDate(`${year}-${month}-${day}`);
+      }
+    }
+    setEditStartDate(newStartDate);
+  };
+
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !editingMember) return;
@@ -510,7 +534,7 @@ export default function MembersPage() {
                     type="date"
                     required
                     value={editStartDate}
-                    onChange={(e) => setEditStartDate(e.target.value)}
+                    onChange={handleStartDateChange}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

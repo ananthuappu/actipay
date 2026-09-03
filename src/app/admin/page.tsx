@@ -139,7 +139,7 @@ export default function AdminPage() {
 
   // 2. Expired Trial Cleanup Logic
   const now = Date.now();
-  const EXPIRED_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+  const EXPIRED_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   const expiredGyms = gyms.filter((g) => {
     // Target only accounts still on trial
