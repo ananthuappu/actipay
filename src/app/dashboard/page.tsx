@@ -80,6 +80,7 @@ export default function DashboardPage() {
     new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]
   );
   const [newIsPT, setNewIsPT] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for recording payment
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -190,8 +191,9 @@ export default function DashboardPage() {
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isSubmitting) return;
 
+    setIsSubmitting(true);
     const requiredAmcs = PLAN_DURATIONS[newPlan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
     const calculatedDueDate = calculateNextDueDate(newStartDate, newPlan, newStartDate);
@@ -284,6 +286,8 @@ export default function DashboardPage() {
       } else {
         console.error("Failed to add member:", err);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -309,8 +313,9 @@ export default function DashboardPage() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedMember) return;
+    if (!user || !selectedMember || isSubmitting) return;
 
+    setIsSubmitting(true);
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
     const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
@@ -370,6 +375,8 @@ export default function DashboardPage() {
       } else {
         console.error("Failed to record payment:", err);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -688,7 +695,7 @@ export default function DashboardPage() {
             setIsAddModalOpen(true);
           }
         }}
-        className="fixed bottom-20 right-6 z-30 h-14 w-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition active:scale-90"
+        className="fixed bottom-32 right-6 z-30 h-14 w-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition active:scale-90"
         title="Add Member"
       >
         <Plus className="h-6 w-6" />
@@ -800,9 +807,10 @@ export default function DashboardPage() {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                disabled={isSubmitting}
+                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Save Member & Log Payment
+                {isSubmitting ? "Saving..." : "Save Member & Log Payment"}
               </button>
             </form>
           </div>
@@ -869,9 +877,10 @@ export default function DashboardPage() {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition"
+                disabled={isSubmitting}
+                className="w-full mt-4 py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Confirm Payment & Extend
+                {isSubmitting ? "Confirming..." : "Confirm Payment & Extend"}
               </button>
             </form>
           </div>
