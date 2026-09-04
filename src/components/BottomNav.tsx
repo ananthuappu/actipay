@@ -10,7 +10,7 @@ export default function BottomNav() {
   const { gym } = useAuth();
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
-  const navItems = [
+  const navItems: any[] = [
     {
       label: "Dashboard",
       href: "/dashboard",
