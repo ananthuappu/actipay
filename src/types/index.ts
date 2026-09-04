@@ -36,6 +36,7 @@ export interface PaymentRecord {
   id: string;
   memberId: string;
   memberName: string;
+  memberPhone?: string;
   amount: number;
   paymentMode: PaymentMode;
   category?: PaymentCategory;

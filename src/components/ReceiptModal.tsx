@@ -2,17 +2,18 @@
 
 import React, { useRef, useState } from "react";
 import * as htmlToImage from "html-to-image";
-import { X, Download, CheckCircle2, Share2 } from "lucide-react";
+import { X, Download, CheckCircle2, Share2, MessageCircle } from "lucide-react";
 import { PaymentRecord } from "@/types";
 
 interface ReceiptModalProps {
   payment: PaymentRecord;
   gymName: string;
   gymPhone?: string;
+  memberPhone?: string;
   onClose: () => void;
 }
 
-export default function ReceiptModal({ payment, gymName, gymPhone, onClose }: ReceiptModalProps) {
+export default function ReceiptModal({ payment, gymName, gymPhone, memberPhone, onClose }: ReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -55,6 +56,27 @@ export default function ReceiptModal({ payment, gymName, gymPhone, onClose }: Re
       }
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    const text = `*Payment Receipt*
+Gym: ${gymName}
+Member: ${payment.memberName}
+Amount: ₹${payment.amount.toLocaleString("en-IN")}
+Mode: ${payment.paymentMode}
+Date: ${payment.paymentDate}
+Valid Until: ${payment.validUntil}
+Txn ID: ${payment.id.slice(0, 10).toUpperCase()}
+
+Thank you for your payment!`;
+
+    const targetPhone = memberPhone || payment.memberPhone;
+
+    if (targetPhone) {
+      window.open(`https://wa.me/91${targetPhone}?text=${encodeURIComponent(text)}`, "_blank");
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     }
   };
 
@@ -114,15 +136,23 @@ export default function ReceiptModal({ payment, gymName, gymPhone, onClose }: Re
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100">
+        {/* Action Buttons */}
+        <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+          <button
+            onClick={handleWhatsAppShare}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition active:scale-95 shadow-sm"
+          >
+            <MessageCircle className="h-5 w-5" />
+            Send to WhatsApp Inbox
+          </button>
+          
           <button
             onClick={handleShareOrDownload}
             disabled={downloading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 shadow-sm"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-300 transition active:scale-95 disabled:opacity-50 shadow-sm"
           >
             <Share2 className="h-4 w-4" />
-            {downloading ? "Processing..." : "Share / Save Receipt"}
+            {downloading ? "Processing..." : "Share Image / Download"}
           </button>
         </div>
       </div>

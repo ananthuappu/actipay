@@ -241,6 +241,7 @@ export default function DashboardPage() {
           transaction.set(admissionPaymentRef, {
             memberId: memberRef.id,
             memberName: `${newFullName.trim()} (Admission / Advance)`,
+            memberPhone: memberData.phone,
             amount: admissionFeeNum,
             paymentMode: "UPI",
             category: "ADMISSION",
@@ -256,6 +257,7 @@ export default function DashboardPage() {
         transaction.set(membershipPaymentRef, {
           memberId: memberRef.id,
           memberName: newFullName.trim(),
+          memberPhone: memberData.phone,
           amount: planFeeNum,
           paymentMode: "UPI",
           category: "MEMBERSHIP",
@@ -343,6 +345,7 @@ export default function DashboardPage() {
         transaction.set(paymentRef, {
           memberId: selectedMember.id,
           memberName: selectedMember.fullName,
+          memberPhone: selectedMember.phone,
           amount: Number(paymentAmount),
           paymentMode,
           category: "RENEWAL",

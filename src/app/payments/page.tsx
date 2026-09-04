@@ -53,6 +53,7 @@ export default function PaymentsPage() {
   }, [user, loading, router]);
 
   const [ptMemberIds, setPtMemberIds] = useState<Set<string>>(new Set());
+  const [memberPhones, setMemberPhones] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,11 +73,15 @@ export default function PaymentsPage() {
         const [membersSnap, paymentsSnap] = await Promise.all([membersPromise, paymentsPromise]);
 
         const ptIds = new Set<string>();
+        const phoneMap = new Map<string, string>();
+        
         membersSnap.forEach((d) => {
           const data = d.data();
           if (data.isPT) ptIds.add(d.id);
+          if (data.phone) phoneMap.set(d.id, data.phone);
         });
         setPtMemberIds(ptIds);
+        setMemberPhones(phoneMap);
 
         const list: PaymentRecord[] = [];
         paymentsSnap.forEach((d) => {
@@ -601,6 +606,7 @@ export default function PaymentsPage() {
           payment={selectedReceipt}
           gymName={gym?.name || "Our Gym"}
           gymPhone={gym?.phone}
+          memberPhone={memberPhones.get(selectedReceipt.memberId) || selectedReceipt.memberPhone}
           onClose={() => setSelectedReceipt(null)}
         />
       )}
