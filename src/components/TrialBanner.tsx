@@ -19,14 +19,14 @@ export default function TrialBanner() {
   const daysLeft = Math.max(0, Math.ceil((trialMs - elapsed) / (1000 * 60 * 60 * 24)));
 
   return (
-    <div className="mx-4 mt-3 mb-2 bg-amber-50/90 border border-amber-200/80 p-3.5 rounded-2xl shadow-xs flex items-start gap-3">
-      <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+    <div className="mx-4 mt-3 mb-2 bg-blue-50/90 border border-blue-200/80 p-3.5 rounded-2xl shadow-xs flex items-start gap-3">
+      <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
       <div className="flex-1">
-        <p className="text-xs text-amber-900 font-medium leading-snug">
-          You are on a Free Trial. Please recharge with an AMC pack to upgrade your account and prevent deletion after 30 days.
+        <p className="text-xs text-blue-950 font-medium leading-snug">
+          You are currently on the Free Trial. Your data is completely safe with us — recharge with an AMC pack anytime to continue uninterrupted.
         </p>
-        <p className="text-[10px] font-bold text-amber-700 mt-1 uppercase tracking-wider">
-          {daysLeft} Days Left
+        <p className="text-[10px] font-bold text-blue-700 mt-1 uppercase tracking-wider">
+          {daysLeft > 0 ? `${daysLeft} Days Remaining in Trial` : "Trial Completed • Recharge Anytime"}
         </p>
       </div>
     </div>

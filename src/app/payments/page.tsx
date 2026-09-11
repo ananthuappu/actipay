@@ -24,13 +24,15 @@ import {
   ChevronUp,
   Download,
   Edit2,
-  X
+  X,
+  Shield,
 } from "lucide-react";
 import ReceiptModal from "@/components/ReceiptModal";
 
 export default function PaymentsPage() {
-  const { user, gym, loading } = useAuth();
+  const { user, gym, userRole, staffProfile, activeGymId, loading } = useAuth();
   const router = useRouter();
+  const currentGymId = activeGymId || user?.uid || "";
 
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -58,15 +60,15 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!user || !currentGymId) return;
       setLoadingData(true);
       try {
         // Run both queries concurrently
         const membersPromise = getDocs(
-          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
+          collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS)
         );
         const paymentsQuery = query(
-          collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
+          collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS),
           orderBy("paymentDate", "desc")
         );
         const paymentsPromise = getDocs(paymentsQuery);
@@ -96,10 +98,10 @@ export default function PaymentsPage() {
       }
     };
 
-    if (user) {
+    if (user && currentGymId) {
       fetchData();
     }
-  }, [user]);
+  }, [user, currentGymId]);
 
   // Date utilities
   const today = new Date();
@@ -221,11 +223,11 @@ export default function PaymentsPage() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !editingPayment) return;
+    if (!user || !editingPayment || !currentGymId) return;
 
     try {
       await updateDoc(
-        doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS, editingPayment.id),
+        doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS, editingPayment.id),
         {
           amount: Number(editAmount),
           paymentMode: editMode,
@@ -269,9 +271,11 @@ export default function PaymentsPage() {
       {/* Header */}
       <header className="px-4 pt-6 pb-2 flex items-start justify-between md:pt-10">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">Payment Analytics</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">
+            {userRole === "staff" ? "Payment Records" : "Payment Analytics"}
+          </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
-            Revenue overview for {gym?.name || "Gym"}
+            {userRole === "staff" ? `Logged in as ${staffProfile?.name || "Staff"}` : `Revenue overview for ${gym?.name || "Gym"}`}
           </p>
         </div>
       </header>
@@ -280,7 +284,19 @@ export default function PaymentsPage() {
       <TrialBanner />
       <RechargeBanner />
 
-      <section className="p-4 space-y-4">
+      {userRole === "staff" ? (
+        <section className="p-4">
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 text-white shadow-xs">
+            <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 mb-1">
+              <Shield className="h-4 w-4" /> Front-Desk Staff View
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Total gym revenue, trends, and financial summaries are restricted to the gym owner. You can search payment logs, view receipts, and share them via WhatsApp below.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section className="p-4 space-y-4">
         {/* Top Cards: Total Collections */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-md">
           <div className="flex items-center justify-between opacity-90 text-xs font-medium mb-1">
@@ -431,6 +447,7 @@ export default function PaymentsPage() {
           </div>
         )}
       </section>
+      )}
 
       {/* Transaction History Section */}
       <section className="px-4 space-y-3">

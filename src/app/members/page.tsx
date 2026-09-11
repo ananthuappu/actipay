@@ -34,8 +34,9 @@ import {
 } from "lucide-react";
 
 export default function MembersPage() {
-  const { user, gym, loading } = useAuth();
+  const { user, gym, userRole, activeGymId, loading } = useAuth();
   const router = useRouter();
+  const currentGymId = activeGymId || user?.uid || "";
 
   const [members, setMembers] = useState<Member[]>([]);
   const [lastAttendanceMap, setLastAttendanceMap] = useState<Record<string, string>>({});
@@ -60,12 +61,12 @@ export default function MembersPage() {
   }, [user, loading, router]);
 
   const fetchMembersAndAttendance = async () => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
     setLoadingData(true);
     try {
       // 1. Prepare Member Query
       const memberQuery = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS),
         orderBy("createdAt", "desc")
       );
 
@@ -75,7 +76,7 @@ export default function MembersPage() {
       const thirtyDaysStr = new Date(thirtyDaysAgo.getTime() - thirtyDaysAgo.getTimezoneOffset() * 60000).toISOString().split("T")[0];
 
       const attQuery = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.ATTENDANCE),
         where("date", ">=", thirtyDaysStr),
         orderBy("date", "desc")
       );
@@ -109,10 +110,10 @@ export default function MembersPage() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && currentGymId) {
       fetchMembersAndAttendance();
     }
-  }, [user]);
+  }, [user, currentGymId]);
 
   // Dynamic Inactivity / Absence Days Calculation
   const getDaysAbsent = (m: Member) => {
@@ -165,11 +166,11 @@ export default function MembersPage() {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !editingMember) return;
+    if (!user || !editingMember || !currentGymId) return;
 
     try {
       await updateDoc(
-        doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, editingMember.id),
+        doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, editingMember.id),
         {
           fullName: editName.trim(),
           phone: editPhone.trim().replace(/\D/g, ""),
@@ -188,13 +189,13 @@ export default function MembersPage() {
   };
 
   const handleToggleExit = async (m: Member) => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
     const action = m.isActive ? "mark as exited" : "reactivate";
     if (!confirm(`Are you sure you want to ${action} ${m.fullName}?`)) return;
 
     try {
       await updateDoc(
-        doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, m.id),
+        doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, m.id),
         {
           isActive: !m.isActive,
         }
@@ -207,7 +208,7 @@ export default function MembersPage() {
 
   // Cascade Permanent Delete (Member + Payments + Attendance)
   const handleDeletePermanent = async (m: Member) => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
     const confirmMessage = `Permanently delete ${m.fullName}?\n\nThis will permanently remove their profile, payment receipts, and attendance records.`;
     if (!window.confirm(confirmMessage)) return;
 
@@ -215,17 +216,17 @@ export default function MembersPage() {
       const batch = writeBatch(db);
 
       // 1. Member document
-      batch.delete(doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, m.id));
+      batch.delete(doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, m.id));
 
       // 2. Payments
       const paymentsSnap = await getDocs(
-        query(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS), where("memberId", "==", m.id))
+        query(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS), where("memberId", "==", m.id))
       );
       paymentsSnap.forEach((d) => batch.delete(d.ref));
 
       // 3. Attendance
       const attendanceSnap = await getDocs(
-        query(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE), where("memberId", "==", m.id))
+        query(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.ATTENDANCE), where("memberId", "==", m.id))
       );
       attendanceSnap.forEach((d) => batch.delete(d.ref));
 
@@ -453,13 +454,15 @@ export default function MembersPage() {
                     )}
                   </button>
 
-                  <button
-                    onClick={() => handleDeletePermanent(m)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 transition"
-                    title="Permanent Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {userRole !== "staff" && (
+                    <button
+                      onClick={() => handleDeletePermanent(m)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 transition"
+                      title="Permanent Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

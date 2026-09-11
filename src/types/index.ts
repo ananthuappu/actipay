@@ -7,8 +7,22 @@ export interface GymProfile {
   authEmail?: string;
   currency: string;
   walletBalance: number;
+  upiId?: string;
   subscriptionPlan?: "TRIAL" | "PAID";
   role?: "owner" | "admin";
+  createdAt: string;
+}
+
+export type UserRole = "owner" | "staff" | "admin";
+
+export interface StaffProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: "staff";
+  gymId: string;
+  gymName?: string;
   createdAt: string;
 }
 

@@ -368,10 +368,16 @@ export default function AdminPage() {
                           <span className="text-[8px] font-normal opacity-75 underline">⇄ Switch</span>
                         </button>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                      <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Phone className="h-3 w-3" /> {gym.phone || "No phone"}
                         </span>
+                        {gym.upiId && (
+                          <>
+                            <span>•</span>
+                            <span className="text-indigo-600 font-medium">UPI: {gym.upiId}</span>
+                          </>
+                        )}
                         <span>•</span>
                         <span className="font-mono text-[10px] text-slate-400">ID: {gym.gymId.slice(0, 8)}...</span>
                       </div>

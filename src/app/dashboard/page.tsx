@@ -3,19 +3,25 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { COLLECTIONS, PLAN_DURATIONS } from "@/lib/constants";
-import { Member, PlanType, PaymentMode } from "@/types";
+import { db, firebaseConfig } from "@/lib/firebase";
+import { COLLECTIONS, PLAN_DURATIONS, isGymTrialExpired } from "@/lib/constants";
+import { Member, PlanType, PaymentMode, StaffProfile } from "@/types";
+import { initializeApp, getApps } from "firebase/app";
 import {
   deleteUser,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  createUserWithEmailAndPassword,
+  signOut as fbSignOutSecondary,
+  getAuth,
 } from "firebase/auth";
 import {
   collection,
   getDocs,
   addDoc,
   doc,
+  setDoc,
+  deleteDoc,
   updateDoc,
   writeBatch,
   query,
@@ -44,11 +50,17 @@ import {
   Banknote,
   Download,
   Search,
+  Shield,
+  UserPlus,
+  UserCheck,
+  Key,
+  Lock,
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, gym, loading, logout, refreshGymData } = useAuth();
+  const { user, gym, userRole, staffProfile, activeGymId, loading, logout, refreshGymData } = useAuth();
   const router = useRouter();
+  const currentGymId = activeGymId || user?.uid || "";
 
   const [members, setMembers] = useState<Member[]>([]);
   const [filter, setFilter] = useState<"ALL" | "DUE_SOON" | "OVERDUE">("ALL");
@@ -58,11 +70,21 @@ export default function DashboardPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-  // Edit Profile state
+  // Edit Profile & Staff modal state
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState<"PROFILE" | "STAFF">("PROFILE");
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editUpiId, setEditUpiId] = useState("");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Staff accounts state
+  const [staffList, setStaffList] = useState<StaffProfile[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffPassword, setNewStaffPassword] = useState("");
+  const [isCreatingStaff, setIsCreatingStaff] = useState(false);
 
   // Recharge state
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
@@ -102,10 +124,10 @@ export default function DashboardPage() {
   }, [user, loading, router]);
 
   const fetchMembers = async () => {
-    if (!user) return;
+    if (!currentGymId) return;
     try {
       const q = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS),
         orderBy("createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -119,11 +141,102 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchStaffList = async () => {
+    if (!currentGymId) return;
+    setLoadingStaff(true);
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.STAFF),
+        orderBy("createdAt", "desc")
+      );
+      const snap = await getDocs(q);
+      const list: StaffProfile[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...(d.data() as any) });
+      });
+      setStaffList(list);
+    } catch (err) {
+      console.error("Error loading staff accounts:", err);
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !currentGymId || isCreatingStaff) return;
+
+    if (newStaffPassword.length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsCreatingStaff(true);
+    try {
+      const secondaryApp =
+        getApps().find((a) => a.name === "SecondaryStaffApp") ||
+        initializeApp(firebaseConfig, "SecondaryStaffApp");
+      const secondaryAuth = getAuth(secondaryApp);
+
+      const res = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        newStaffEmail.trim().toLowerCase(),
+        newStaffPassword
+      );
+
+      const staffDocData: StaffProfile = {
+        id: res.user.uid,
+        name: newStaffName.trim(),
+        email: newStaffEmail.trim().toLowerCase(),
+        role: "staff",
+        gymId: currentGymId,
+        gymName: gym?.name || "",
+        createdAt: new Date().toISOString(),
+      };
+
+      // 1. Save in global lookup for login
+      await setDoc(doc(db, COLLECTIONS.STAFF, res.user.uid), staffDocData);
+      // 2. Save in gym's staff subcollection
+      await setDoc(doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.STAFF, res.user.uid), staffDocData);
+
+      await fbSignOutSecondary(secondaryAuth);
+
+      setNewStaffName("");
+      setNewStaffEmail("");
+      setNewStaffPassword("");
+      alert(`Staff account created successfully for "${newStaffName.trim()}"! They can now log in at /login with their email and password.`);
+      fetchStaffList();
+    } catch (err: any) {
+      console.error("Failed to create staff account:", err);
+      if (err.code === "auth/email-already-in-use") {
+        alert("An account with this email already exists. Please use a different email.");
+      } else {
+        alert("Failed to create staff account: " + (err.message || "Unknown error"));
+      }
+    } finally {
+      setIsCreatingStaff(false);
+    }
+  };
+
+  const handleDeleteStaff = async (staffId: string, staffName: string) => {
+    if (!currentGymId) return;
+    if (!confirm(`Revoke login access for ${staffName}? They will no longer be able to log in.`)) return;
+
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.STAFF, staffId));
+      await deleteDoc(doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.STAFF, staffId));
+      fetchStaffList();
+    } catch (err) {
+      console.error("Failed to delete staff:", err);
+      alert("Failed to revoke access.");
+    }
+  };
+
   useEffect(() => {
-    if (user) {
+    if (user && currentGymId) {
       fetchMembers();
     }
-  }, [user]);
+  }, [user, currentGymId]);
 
   // Dynamic Status Calculation (Keeps Firebase $0 spark friendly)
   const getStatus = (nextDueDate: string) => {
@@ -197,6 +310,12 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!user || isSubmitting) return;
 
+    if (isGymTrialExpired(gym)) {
+      setRechargeReason("Your 30-day Free Trial has ended. Please recharge with an AMC pack to add new members.");
+      setIsRechargeModalOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     const requiredAmcs = PLAN_DURATIONS[newPlan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
@@ -219,7 +338,7 @@ export default function DashboardPage() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+        const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
         const gymDoc = await transaction.get(gymRef);
         
         if (!gymDoc.exists()) {
@@ -233,9 +352,9 @@ export default function DashboardPage() {
         }
 
         // 1. Generate refs
-        const memberRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS));
-        const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
-        const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
+        const memberRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS));
+        const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+        const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
 
         // 2. Set Member
         transaction.set(memberRef, memberData);
@@ -299,13 +418,14 @@ export default function DashboardPage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !gym) return;
+    if (!user || !gym || !currentGymId) return;
     setIsEditingProfile(true);
     try {
-      const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+      const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
       await updateDoc(gymRef, {
         name: editName.trim(),
         phone: editPhone.trim().replace(/\D/g, ""),
+        upiId: editUpiId.trim(),
       });
       await refreshGymData();
       setIsEditProfileModalOpen(false);
@@ -319,7 +439,13 @@ export default function DashboardPage() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedMember || isSubmitting) return;
+    if (!user || !selectedMember || isSubmitting || !currentGymId) return;
+
+    if (isGymTrialExpired(gym)) {
+      setRechargeReason("Your 30-day Free Trial has ended. Please recharge with an AMC pack to record membership payments.");
+      setIsRechargeModalOpen(true);
+      return;
+    }
 
     setIsSubmitting(true);
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
@@ -330,7 +456,7 @@ export default function DashboardPage() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const gymRef = doc(db, COLLECTIONS.GYMS, user.uid);
+        const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
         const gymDoc = await transaction.get(gymRef);
         
         if (!gymDoc.exists()) {
@@ -343,8 +469,8 @@ export default function DashboardPage() {
           throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
         }
 
-        const paymentRef = doc(collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS));
-        const memberRef = doc(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS, selectedMember.id);
+        const paymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+        const memberRef = doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, selectedMember.id);
 
         transaction.set(paymentRef, {
           memberId: selectedMember.id,
@@ -388,13 +514,13 @@ export default function DashboardPage() {
   };
 
   const viewMemberHistory = async (member: Member) => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
     setSelectedMember(member);
     setIsHistoryModalOpen(true);
     setLoadingHistory(true);
     try {
       const q = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.PAYMENTS),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS),
         orderBy("paymentDate", "desc")
       );
       const snap = await getDocs(q);
@@ -415,7 +541,17 @@ export default function DashboardPage() {
 
   const sendWhatsAppReminder = (member: Member) => {
     const gymTitle = gym?.name || "the gym";
-    const text = `Hi ${member.fullName}, your membership fee of ₹${member.feeAmount} for ${gymTitle} was due on ${member.nextDueDate}. Please pay to continue your workout sessions!`;
+    const amount = calculateOwedAmount(member);
+    
+    let text = `Hi ${member.fullName}, your membership fee of ₹${amount} for ${gymTitle} was due on ${member.nextDueDate}. Please pay to continue your workout sessions!`;
+
+    if (gym?.upiId && gym.upiId.trim()) {
+      const cleanUpi = gym.upiId.trim();
+      const upiLink = `upi://pay?pa=${cleanUpi}&pn=${encodeURIComponent(gymTitle)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Gym Fee - ${member.fullName}`)}`;
+      
+      text += `\n\n👉 *Pay directly via UPI:*\n${upiLink}\n\n(Or send to UPI ID: ${cleanUpi} on GPay / PhonePe / Paytm)`;
+    }
+
     window.open(`https://wa.me/91${member.phone}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -525,6 +661,11 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl md:text-3xl text-slate-900 flex items-center gap-2">
             <span className="font-semibold">{gym?.name || "ActiPay"}</span>
+            {userRole === "staff" && (
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                Staff: {staffProfile?.name || "Front Desk"}
+              </span>
+            )}
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium mt-1 flex items-center gap-2">
             Dashboard
@@ -538,13 +679,15 @@ export default function DashboardPage() {
 
         {/* Header Actions (Delete Account & Sign Out) */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setIsDeleteAccountModalOpen(true)}
-            className="p-2 text-slate-400 hover:text-red-600 transition rounded-xl hover:bg-red-50"
-            title="Delete Gym Account"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
+          {userRole !== "staff" && (
+            <button
+              onClick={() => setIsDeleteAccountModalOpen(true)}
+              className="p-2 text-slate-400 hover:text-red-600 transition rounded-xl hover:bg-red-50"
+              title="Delete Gym Account"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
           <button
             onClick={logout}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 transition rounded-xl hover:bg-slate-100"
@@ -565,6 +708,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-6 md:gap-8">
           <button 
             onClick={() => {
+              if (isGymTrialExpired(gym)) {
+                setRechargeReason(
+                  "Your 30-day Free Trial has ended. Please recharge with an AMC pack to add new members."
+                );
+                setIsRechargeModalOpen(true);
+                return;
+              }
               if ((gym?.walletBalance || 0) === 0) {
                 setRechargeReason(
                   "Your wallet is empty. You need at least 1 AMC to add a member."
@@ -583,7 +733,16 @@ export default function DashboardPage() {
           </button>
 
           <button 
-            onClick={() => setFilter("DUE_SOON")}
+            onClick={() => {
+              if (isGymTrialExpired(gym)) {
+                setRechargeReason(
+                  "Your 30-day Free Trial has ended. Please recharge with an AMC pack to record membership payments."
+                );
+                setIsRechargeModalOpen(true);
+                return;
+              }
+              setFilter("DUE_SOON");
+            }}
             className="flex flex-col items-center gap-2 group"
           >
             <div className="w-14 h-14 md:w-16 md:h-16 bg-[#1e293b] rounded-2xl md:rounded-3xl flex items-center justify-center text-white shadow-lg shadow-slate-900/20 active:scale-95 transition">
@@ -606,6 +765,11 @@ export default function DashboardPage() {
             onClick={() => {
               setEditName(gym?.name || "");
               setEditPhone(gym?.phone || "");
+              setEditUpiId(gym?.upiId || "");
+              setProfileTab("PROFILE");
+              if (userRole !== "staff") {
+                fetchStaffList();
+              }
               setIsEditProfileModalOpen(true);
             }}
             className="flex flex-col items-center gap-2 group"
@@ -764,6 +928,13 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={() => {
+                      if (isGymTrialExpired(gym)) {
+                        setRechargeReason(
+                          "Your 30-day Free Trial has ended. Please recharge with an AMC pack to record membership payments."
+                        );
+                        setIsRechargeModalOpen(true);
+                        return;
+                      }
                       setSelectedMember(member);
                       setPaymentAmount(String(calculateOwedAmount(member)));
                       setIsPaymentModalOpen(true);
@@ -1025,12 +1196,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL: Edit Profile */}
+      {/* MODAL: Edit Profile & Staff Management */}
       {isEditProfileModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 space-y-4 shadow-xl">
+          <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="font-bold text-slate-900">Edit Business Profile</h2>
+              <h2 className="font-bold text-slate-900 text-base">
+                {userRole === "staff" ? "Gym Profile" : "Gym Settings & Staff"}
+              </h2>
               <button
                 onClick={() => setIsEditProfileModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600"
@@ -1039,48 +1212,225 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Business Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                />
+            {/* Tab Navigation (Owner Only) */}
+            {userRole !== "staff" && (
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setProfileTab("PROFILE")}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    profileTab === "PROFILE"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Business Info
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileTab("STAFF");
+                    fetchStaffList();
+                  }}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                    profileTab === "STAFF"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <span>Staff Accounts</span>
+                  <span className="px-1.5 py-0.2 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">
+                    {staffList.length}
+                  </span>
+                </button>
               </div>
+            )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Contact Phone</label>
-                <input
-                  type="tel"
-                  required
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Login Email</label>
-                <input
-                  type="email"
-                  disabled
-                  value={gym?.authEmail || user?.email || ""}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Authentication email cannot be changed.</p>
-              </div>
+            {/* TAB 1: Business Profile Form */}
+            {profileTab === "PROFILE" && (
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Business Name</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={userRole === "staff"}
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={isEditingProfile}
-                className="w-full py-3 rounded-full bg-blue-600 font-bold text-white shadow-md hover:bg-blue-700 transition active:scale-95 disabled:opacity-70"
-              >
-                {isEditingProfile ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Contact Phone</label>
+                  <input
+                    type="tel"
+                    required
+                    disabled={userRole === "staff"}
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">UPI ID / VPA</label>
+                    <span className="text-[10px] text-slate-400 font-medium">Optional</span>
+                  </div>
+                  <input
+                    type="text"
+                    disabled={userRole === "staff"}
+                    placeholder="e.g. gymname@okaxis or 9876543210@paytm"
+                    value={editUpiId}
+                    onChange={(e) => setEditUpiId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">If set, a direct UPI payment link will be automatically attached to WhatsApp fee due reminders.</p>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {userRole === "staff" ? "Your Staff Login Email" : "Gym Owner Login Email"}
+                  </label>
+                  <input
+                    type="email"
+                    disabled
+                    value={gym?.authEmail || user?.email || ""}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Authentication email cannot be changed.</p>
+                </div>
+
+                {userRole !== "staff" && (
+                  <button
+                    type="submit"
+                    disabled={isEditingProfile}
+                    className="w-full py-3 rounded-full bg-blue-600 font-bold text-white shadow-md hover:bg-blue-700 transition active:scale-95 disabled:opacity-70"
+                  >
+                    {isEditingProfile ? "Saving..." : "Save Changes"}
+                  </button>
+                )}
+              </form>
+            )}
+
+            {/* TAB 2: Staff Accounts (Owner Only) */}
+            {profileTab === "STAFF" && userRole !== "staff" && (
+              <div className="space-y-5">
+                {/* Form: Add New Staff */}
+                <form onSubmit={handleCreateStaff} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                    <UserPlus className="h-4 w-4 text-blue-600" />
+                    <span>Create Staff Login</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Create logins for front-desk receptionists or trainers. Staff can mark attendance and log payments, but cannot view total gym revenue or delete data.
+                  </p>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Staff Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul (Front Desk)"
+                      value={newStaffName}
+                      onChange={(e) => setNewStaffName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Login Email</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="staff@example.com"
+                        value={newStaffEmail}
+                        onChange={(e) => setNewStaffEmail(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="Min 6 characters"
+                        value={newStaffPassword}
+                        onChange={(e) => setNewStaffPassword(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isCreatingStaff || !newStaffName || !newStaffEmail || !newStaffPassword}
+                    className="w-full py-2.5 rounded-xl bg-blue-600 font-bold text-xs text-white hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    {isCreatingStaff ? (
+                      <>
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Creating Staff Login...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4" />
+                        <span>Create Staff Account</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Staff List */}
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Active Staff Accounts ({staffList.length})
+                  </h3>
+
+                  {loadingStaff ? (
+                    <div className="py-6 flex justify-center">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                    </div>
+                  ) : staffList.length === 0 ? (
+                    <div className="text-center py-6 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <Shield className="h-8 w-8 text-slate-300 mx-auto mb-1.5" />
+                      <p className="text-xs font-medium text-slate-500">No staff accounts created yet.</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Use the form above to add your front-desk staff.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {staffList.map((staff) => (
+                        <div
+                          key={staff.id}
+                          className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-xs"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                              <UserCheck className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-900">{staff.name}</p>
+                              <p className="text-[11px] text-slate-500">{staff.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteStaff(staff.id, staff.name)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            title="Remove staff account"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [gymName, setGymName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [upiId, setUpiId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -52,6 +53,7 @@ export default function RegisterPage() {
         name: gymName.trim(),
         phone: cleanPhone,
         authEmail: authEmail,
+        upiId: upiId.trim(),
         currency: "INR",
         walletBalance: 100, // 100 Free AMCs for Trial
         subscriptionPlan: "TRIAL",
@@ -130,6 +132,21 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-xs font-semibold text-slate-700">UPI ID / VPA</label>
+            <span className="text-[10px] text-slate-400 font-medium">Optional</span>
+          </div>
+          <input
+            type="text"
+            placeholder="e.g. gymname@okaxis or 9876543210@paytm"
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-[10px] text-slate-400 mt-1">Used to include 1-tap payment links in WhatsApp due reminders.</p>
         </div>
 
         <div>

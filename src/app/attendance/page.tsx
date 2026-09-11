@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { COLLECTIONS } from "@/lib/constants";
+import { COLLECTIONS, isGymTrialExpired } from "@/lib/constants";
 import { Member, AttendanceRecord } from "@/types";
 import {
   collection,
@@ -17,6 +17,7 @@ import {
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
 import TrialBanner from "@/components/TrialBanner";
+import RechargeModal from "@/components/RechargeModal";
 import {
   UserCheck,
   Search,
@@ -28,13 +29,16 @@ import {
 } from "lucide-react";
 
 export default function AttendancePage() {
-  const { user, gym, loading } = useAuth();
+  const { user, gym, userRole, activeGymId, loading } = useAuth();
   const router = useRouter();
+  const currentGymId = activeGymId || user?.uid || "";
 
   const [members, setMembers] = useState<Member[]>([]);
   const [attendanceList, setAttendanceList] = useState<AttendanceRecord[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
+  const [rechargeReason, setRechargeReason] = useState("");
 
   const todayStr = useMemo(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0], []);
 
@@ -45,16 +49,16 @@ export default function AttendancePage() {
   }, [user, loading, router]);
 
   const loadData = async () => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
     setLoadingData(true);
     try {
       // Run both queries concurrently
       const membersPromise = getDocs(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.MEMBERS)
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS)
       );
       
       const attQuery = query(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.ATTENDANCE),
         where("date", "==", todayStr)
       );
       const attPromise = getDocs(attQuery);
@@ -108,23 +112,30 @@ export default function AttendancePage() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && currentGymId) {
       loadData();
     }
-  }, [user, todayStr]);
+  }, [user, currentGymId, todayStr]);
 
   const checkedInMemberIds = useMemo(() => {
     return new Set(attendanceList.map((a) => a.memberId));
   }, [attendanceList]);
 
   const handlePunchAttendance = async (member: Member) => {
-    if (!user) return;
+    if (!user || !currentGymId) return;
+
+    if (isGymTrialExpired(gym)) {
+      setRechargeReason("Your 30-day Free Trial has ended. Please recharge with an AMC pack to log member attendance.");
+      setIsRechargeModalOpen(true);
+      return;
+    }
+
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     try {
       await addDoc(
-        collection(db, COLLECTIONS.GYMS, user.uid, COLLECTIONS.ATTENDANCE),
+        collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.ATTENDANCE),
         {
           memberId: member.id,
           memberName: member.fullName,
@@ -266,6 +277,13 @@ export default function AttendancePage() {
 
       {/* Persistent Bottom Navigation */}
       <BottomNav />
+
+      {/* Recharge Modal */}
+      <RechargeModal
+        isOpen={isRechargeModalOpen}
+        onClose={() => setIsRechargeModalOpen(false)}
+        reason={rechargeReason}
+      />
     </div>
   );
 }
