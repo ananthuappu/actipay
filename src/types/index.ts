@@ -8,7 +8,10 @@ export interface GymProfile {
   currency: string;
   walletBalance: number;
   upiId?: string;
-  subscriptionPlan?: "TRIAL" | "PAID";
+  subscriptionPlan?: "TRIAL" | "STARTER" | "GROWTH" | "UNLIMITED" | "PAID";
+  billing_model?: "prepaid_credits" | "flat_subscription";
+  member_cap?: number | null;
+  planExpiresAt?: string;
   role?: "owner" | "admin";
   createdAt: string;
 }

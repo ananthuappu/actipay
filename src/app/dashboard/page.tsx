@@ -4,7 +4,20 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { db, firebaseConfig } from "@/lib/firebase";
-import { COLLECTIONS, PLAN_DURATIONS, TRIAL_MEMBER_LIMIT, isGymTrialExpired } from "@/lib/constants";
+import {
+  COLLECTIONS,
+  PLAN_DURATIONS,
+  TRIAL_MEMBER_LIMIT,
+  GROWTH_MEMBER_LIMIT,
+  getNormalizedPlan,
+  isGymInTrial,
+  isGymTrialExpired,
+  isFlatSubscription,
+  isSubscriptionActive,
+  isSubscriptionExpired,
+  getSubscriptionDaysRemaining,
+  getMemberCap,
+} from "@/lib/constants";
 import { Member, PlanType, PaymentMode, StaffProfile } from "@/types";
 import { initializeApp, getApps } from "firebase/app";
 import {
@@ -311,18 +324,30 @@ export default function DashboardPage() {
     if (!user || isSubmitting) return;
 
     if (isGymTrialExpired(gym)) {
-      setRechargeReason("Your 30-day Free Trial has ended. Please recharge with an AMC pack to add new members.");
+      setRechargeReason("Your 30-day Free Trial has ended. Please upgrade to a plan to add new members.");
       setIsRechargeModalOpen(true);
       return;
     }
 
-    const isTrial = gym?.subscriptionPlan !== "PAID";
+    if (isSubscriptionExpired(gym)) {
+      setRechargeReason(`Your ${gym?.subscriptionPlan || "Subscription"} plan has expired. Please renew to continue adding members.`);
+      setIsRechargeModalOpen(true);
+      return;
+    }
 
-    if (isTrial) {
+    const activeCount = members.filter((m) => m.isActive !== false).length;
+
+    if (isGymInTrial(gym)) {
       // Hard cap: 50 active members during trial
-      const activeCount = members.filter((m) => m.isActive !== false).length;
       if (activeCount >= TRIAL_MEMBER_LIMIT) {
         setRechargeReason("You've reached the 50-member trial limit. Upgrade to add more members.");
+        setIsRechargeModalOpen(true);
+        return;
+      }
+    } else if (gym?.subscriptionPlan === "GROWTH") {
+      // Hard cap: 100 active members for Growth plan
+      if (activeCount >= GROWTH_MEMBER_LIMIT) {
+        setRechargeReason("You've reached the 100-member limit on Growth. Upgrade to Unlimited to keep growing.");
         setIsRechargeModalOpen(true);
         return;
       }
@@ -349,8 +374,11 @@ export default function DashboardPage() {
     };
 
     try {
-      if (isTrial) {
-        // Trial accounts: zero AMC deduction, direct batch creation
+      const isTrial = isGymInTrial(gym);
+      const isFlatSub = isFlatSubscription(gym);
+
+      if (isTrial || isFlatSub) {
+        // Trial and Flat Subscription accounts: zero AMC deduction, direct batch creation
         const batch = writeBatch(db);
         const memberRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS));
         batch.set(memberRef, memberData);
@@ -389,7 +417,7 @@ export default function DashboardPage() {
 
         await batch.commit();
       } else {
-        // Paid accounts: AMC credit consumption logic
+        // Prepaid accounts: AMC credit consumption logic
         await runTransaction(db, async (transaction) => {
           const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
           const gymDoc = await transaction.get(gymRef);
@@ -491,13 +519,14 @@ export default function DashboardPage() {
     if (!user || !selectedMember || isSubmitting || !currentGymId) return;
 
     if (isGymTrialExpired(gym)) {
-      setRechargeReason("Your 30-day Free Trial has ended. Please recharge with an AMC pack to record membership payments.");
+      setRechargeReason("Your 30-day Free Trial has ended. Please upgrade or recharge to record membership payments.");
       setIsRechargeModalOpen(true);
       return;
     }
 
     setIsSubmitting(true);
-    const isTrial = gym?.subscriptionPlan !== "PAID";
+    const isTrial = isGymInTrial(gym);
+    const isFlatSub = isFlatSubscription(gym);
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
     const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
@@ -505,8 +534,8 @@ export default function DashboardPage() {
     const newDueDate = calculateNextDueDate(baseDate, planExtension, selectedMember.startDate);
 
     try {
-      if (isTrial) {
-        // Trial accounts: payments and renewals are unrestricted without AMC deduction
+      if (isTrial || isFlatSub) {
+        // Trial and Flat Subscription accounts: payments and renewals are unrestricted without AMC deduction
         const batch = writeBatch(db);
         const paymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
         const memberRef = doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, selectedMember.id);
@@ -749,17 +778,39 @@ export default function DashboardPage() {
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium mt-1 flex items-center gap-2">
             Dashboard
-            {gym?.subscriptionPlan === "PAID" ? (
-              <span className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded ${
-                (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
-              }`}>
-                {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                Free Trial: {members.filter((m) => m.isActive !== false).length}/{TRIAL_MEMBER_LIMIT} Members
-              </span>
-            )}
+            {(() => {
+              const currentPlan = getNormalizedPlan(gym);
+              if (currentPlan === "TRIAL") {
+                return (
+                  <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                    Free Trial: {members.filter((m) => m.isActive !== false).length}/{TRIAL_MEMBER_LIMIT} Members
+                  </span>
+                );
+              }
+              if (currentPlan === "GROWTH") {
+                return (
+                  <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    Growth: {members.filter((m) => m.isActive !== false).length}/{GROWTH_MEMBER_LIMIT} Members · {getSubscriptionDaysRemaining(gym)}d left
+                  </span>
+                );
+              }
+              if (currentPlan === "UNLIMITED") {
+                return (
+                  <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ⚡ Unlimited · {getSubscriptionDaysRemaining(gym)}d left
+                  </span>
+                );
+              }
+              return (
+                <span
+                  className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded ${
+                    (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
+                </span>
+              );
+            })()}
           </p>
         </div>
 
@@ -796,14 +847,20 @@ export default function DashboardPage() {
             onClick={() => {
               if (isGymTrialExpired(gym)) {
                 setRechargeReason(
-                  "Your 30-day Free Trial has ended. Please recharge with an AMC pack to add new members."
+                  "Your 30-day Free Trial has ended. Please upgrade to a plan to add new members."
                 );
                 setIsRechargeModalOpen(true);
                 return;
               }
-              const isTrial = gym?.subscriptionPlan !== "PAID";
-              if (isTrial) {
-                const activeCount = members.filter((m) => m.isActive !== false).length;
+              if (isSubscriptionExpired(gym)) {
+                setRechargeReason(
+                  `Your ${gym?.subscriptionPlan || "Subscription"} plan has expired. Please renew to continue adding members.`
+                );
+                setIsRechargeModalOpen(true);
+                return;
+              }
+              const activeCount = members.filter((m) => m.isActive !== false).length;
+              if (isGymInTrial(gym)) {
                 if (activeCount >= TRIAL_MEMBER_LIMIT) {
                   setRechargeReason(
                     "You've reached the 50-member trial limit. Upgrade to add more members."
@@ -811,6 +868,17 @@ export default function DashboardPage() {
                   setIsRechargeModalOpen(true);
                   return;
                 }
+                setIsAddModalOpen(true);
+              } else if (gym?.subscriptionPlan === "GROWTH") {
+                if (activeCount >= GROWTH_MEMBER_LIMIT) {
+                  setRechargeReason(
+                    "You've reached the 100-member limit on Growth. Upgrade to Unlimited to keep growing."
+                  );
+                  setIsRechargeModalOpen(true);
+                  return;
+                }
+                setIsAddModalOpen(true);
+              } else if (gym?.subscriptionPlan === "UNLIMITED") {
                 setIsAddModalOpen(true);
               } else {
                 if ((gym?.walletBalance || 0) === 0) {

@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const gymSnap = await getDoc(gymDocRef);
 
         if (gymSnap.exists()) {
-          const gymData = gymSnap.data() as GymProfile;
+          const gymData = { gymId: gymSnap.id, ...gymSnap.data() } as GymProfile;
           setGym(gymData);
           setUserRole(gymData.role || "owner");
           setActiveGymId(currentUser.uid);
@@ -56,11 +56,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
 
           // Realtime listener for owner gym doc
-          unsubscribeGym = onSnapshot(gymDocRef, (snap) => {
-            if (snap.exists()) {
-              setGym(snap.data() as GymProfile);
+          unsubscribeGym = onSnapshot(
+            gymDocRef,
+            (snap) => {
+              if (snap.exists()) {
+                setGym({ gymId: snap.id, ...snap.data() } as GymProfile);
+              }
+            },
+            (err) => {
+              console.error("Gym snapshot listener error:", err);
             }
-          });
+          );
         } else {
           // 2. Check if user is a Staff member
           const staffDocRef = doc(db, COLLECTIONS.STAFF, currentUser.uid);

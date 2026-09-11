@@ -15,8 +15,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ActiPay Fitness - Member & Payment Tracker",
-  description: "Stop paying fixed monthly fees. Pay only for active customers with ActiPay.",
+  title: "ActiPay Fitness - Pay Per Active. No Flat Fees. No Growth Penalty.",
+  description: "Built exclusively for small-scale gym owners. Start pay-as-you-go from ₹299, or go flat-rate from ₹599/month once you're established.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

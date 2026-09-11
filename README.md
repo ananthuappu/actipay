@@ -1,73 +1,75 @@
-# ⚡ ActiPay Fitness — Member Dues & Payment Tracker
+# ⚡ ActiPay Fitness — Gym Member Dues & Business OS
 
-A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **Tailwind CSS**, and **Firebase** for gyms, yoga studios, and fitness centers. Manage memberships, track recurring fee dues, log daily attendance, view payment analytics, and send one-tap WhatsApp reminders.
+A lightweight, mobile-first Progressive Web App (PWA) built with **Next.js**, **Tailwind CSS**, and **Firebase** for gyms, fitness clubs, and yoga studios. Manage memberships, track recurring fee dues, log daily attendance, view payment analytics, issue printable PDF receipts, and send one-tap WhatsApp reminders with direct UPI payment links.
 
-Engineered with a unique **Prepaid Active Member Credit (AMC)** model — allowing businesses to stop paying flat SaaS fees for ghost members and only pay for exactly what they use.
+Engineered with a **Pay-As-You-Grow Active Member Credit (AMC)** model — allowing gym owners to eliminate expensive fixed monthly software fees and pay only for members who actually train and pay.
 
 ---
 
-## 📱 Features
+## 📱 Key Features
 
-### 1. Multi-Tenant Authentication & Onboarding
-- **Zero-Cost Owner Sign-In:** Authenticate using an **Owner Mobile Number** or **Email** and password without paid SMS OTP gateways.
-- **Tenant Isolation:** Secure multi-tenant database partitioning ensuring data privacy across multiple gyms.
+### 1. Multi-Tenant Authentication & Multi-Role Staff Logins
+- **Owner & Staff Logins:** Single unified login at `/login` supporting both Gym Owners and Front-Desk / Trainer staff.
+- **Secondary App Staff Creation:** Gym owners can create reception staff accounts directly in the Dashboard Profile without being logged out of their own session.
+- **Role-Based Permission Scoping:**
+  - **Staff Members Can:** View members, search, mark daily attendance, add members, record renewals, and send WhatsApp receipts/due reminders.
+  - **Staff Cannot:** View total monthly/lifetime revenue summaries (masked to "Owner View Only"), delete member records permanently, or manage other staff accounts.
+- **Strict Multi-Tenant Isolation:** Database rules guarantee that staff and owners from one gym cannot access or query data from any other gym.
 
-### 2. Dashboard & Dues Management (`/dashboard`)
-- **Real-Time Overview Metrics:** Instant counters for Active Members, Dues Soon (within 3 days), and Overdue Members.
-- **Dynamic Due Engine:** Calculates active, due, and overdue statuses on the client side.
-- **Quick Member Onboarding:** Add members, choose membership plans (Monthly, Quarterly, Half-Yearly, Annual), and track one-time **Admission/Advance Fees**.
-- **Prepaid AMC Protection:** Seamlessly validates wallet balance before allowing an owner to add or renew a member. Automatically blocks actions if the owner doesn't have sufficient AMCs.
-- **One-Tap WhatsApp Reminders:** Send pre-formatted, personalized payment reminder messages with a single tap.
-- **Fast Payment Extensions:** Log renewals by 1, 3, 6, or 12 months with payment mode selection (UPI, Cash, Card, Bank Transfer).
+### 2. 30-Day Free Trial & Pay-As-You-Grow AMC Engine
+- **30-Day Free Trial (50-Member Cap):** New gyms start on a 30-day trial with up to 50 active members. All attendance, payment logging, and member tracking features are completely unrestricted without AMC deduction.
+- **Graceful Soft-Lock:** After day 30, gym owners can still log in and view member names and contact numbers. Adding new members, recording payments, and attendance check-ins resume upon recharging an AMC pack.
+- **Prepaid Active Member Credits (AMC):**
+  - **1 Month = 1 AMC** • **Quarterly = 3 AMCs** • **Half-Yearly = 6 AMCs** • **Annual = 12 AMCs**
+  - AMCs are deducted only when an active member is added or renewed. Inactive members cost ₹0. Credits stay in the wallet forever.
+
+### 3. Dashboard & Dues Management (`/dashboard`)
+- **Real-Time Overview Metrics:** Counters for Active Members, Personal Training (PT) Enrolled, Due Soon (expiring in 5 days), and Overdue Members.
+- **One-Tap WhatsApp Reminders with Direct UPI:** Configurable Gym UPI ID / VPA automatically attaches a clickable `upi://pay` link to WhatsApp reminder messages for instant 1-tap payments.
+- **Search & Quick Filters:** Instant client-side search across member names and phone numbers, with tabs for `All`, `Due Soon`, and `Overdue`.
 - **Payment History Drawer:** View previous transaction receipts for any member on demand.
 
-### 3. Member Management & Inactivity Retention (`/members`)
-- **Full Member Directory:** Searchable by member name or phone number.
-- **Profile Editing:** Update fee amounts, subscription plan types, contact numbers, and next due dates.
-- **Inactivity Tracker (4+ Days Absent):** Automatically detects members missing workouts for 4 or more consecutive days.
-- **WhatsApp Absent Nudge:** Send personalized re-engagement messages directly to members who haven't visited recently.
-- **Soft Exit & Reactivate:** Mark members as exited when they leave (retains financial and attendance records for reports) with instant reactivation.
-- **Atomic Cascading Deletion:** Permanently delete a member along with their entire payment receipts and attendance logs via Firestore batch writes.
+### 4. Member Management & Retention (`/members`)
+- **Full Member Directory:** Filter by Active, Absent (4+ days without attendance), or Exited members.
+- **Profile Editing:** Update plans, fee amounts, joining dates, due dates, and Personal Training (PT) flags.
+- **Inactivity Tracker & WhatsApp Nudge:** Detects members absent for 4+ consecutive days and sends personalized re-engagement messages via WhatsApp.
+- **Soft Exit & Reactivation:** Mark members as exited when they leave (preserves financial logs) with 1-click reactivation.
+- **Cascade Deletion (Owner Only):** Permanently removes a member along with their entire payment receipts and attendance logs.
 
-### 4. Daily Attendance & Check-In (`/attendance`)
-- **One-Tap Attendance Roster:** Fast front-desk check-in interface with exact punch timestamps.
-- **Live Daily Present Counter:** Instant tally of members checked in today.
-- **Hardware-Ready Biometric Architecture:** Prepared for webhook push events from eSSL, ZKTeco, or Mantra facial/fingerprint scanners.
+### 5. Daily Attendance & Hardware-Ready Check-In (`/attendance`)
+- **One-Tap Check-In Roster:** Instant front-desk check-in interface with exact timestamp logging.
+- **Live Daily Present Counter:** Live tally of members checked in today.
+- **Hardware-Ready Biometric Architecture:** Prepared for webhook integration with eSSL, ZKTeco, and Mantra facial/fingerprint scanners.
 
-### 5. Sales & Revenue Analytics (`/payments`)
-- **Revenue Snapshot:** Compare current month's collection with lifetime revenue.
-- **Payment Method Split:** Live breakdown of collections across UPI, Cash, and Card/Other.
-- **Registration vs. Subscription Tracking:** Distinguishes recurring subscription income from one-time onboarding admission charges.
-- **Searchable Transaction Audit Feed:** Filter transaction records by calendar month or search by member name.
+### 6. Sales & Revenue Analytics (`/payments`)
+- **Revenue Snapshot (Owner Only):** Real-time totals for This Month's Collection, Lifetime Revenue, and Personal Training (PT) income.
+- **6-Month Revenue Trend Chart:** Visual bar chart showing monthly collection trends.
+- **Revenue Split & Payment Mode Breakdown:** Recurring vs. Admission fees, and UPI vs. Cash vs. Card collections.
+- **Searchable Transaction Feed:** Filter transactions by date ranges (This Month, Last Month, Last 3 Months, Custom Range) or search by member name.
+- **Multi-Format Receipts:** Generate printable/downloadable PDF receipts, WhatsApp text receipts, and downloadable image receipts.
 
-### 6. PWA & Offline Readiness
-- **Installable Mobile PWA:** Add to iOS and Android home screens as a full-screen standalone application.
-- **Offline Persistence:** Firestore local caching allows the app to load and function in low-connectivity areas (e.g., gym basements).
+### 7. SaaS Master Admin Panel (`/admin`)
+- **Master Admin Dashboard:** Accessible exclusively to verified SaaS admin emails.
+- **Gym Management:** Search registered gyms, adjust wallet AMC balances, and toggle between `TRIAL` and `PAID` subscription plans.
+
+### 8. Desktop & Mobile PWA Experience
+- **Responsive Split Desktop Auth:** Modern SaaS layout on desktop screens and native feel on mobile devices.
+- **Installable PWA:** Add to iOS and Android home screens as a full-screen standalone application.
+- **Offline Resilience:** Local Firestore caching enables operation in low-connectivity areas (e.g. gym basements).
 
 ---
 
 ## 🛠️ Technology Stack
 
-This platform is built on a modern, high-performance, and deeply integrated architecture:
-
-### Core Framework & Language
-* **Next.js (App Router):** The overarching React framework powering the app, handling routing, server-side rendering, and API endpoints (like the auto-generated logo).
-* **React 19:** The UI library used to build all components, manage state, and handle interactive elements.
-* **TypeScript:** The entire codebase is strictly typed to catch bugs at compile-time and mathematically secure data structures (like Gym and Member profiles).
-
-### Styling & UI
-* **Tailwind CSS v4:** The utility-first CSS framework used for all styling. Allows us to build beautiful, responsive layouts directly inside React components without maintaining separate CSS files.
-* **Lucide React:** A beautiful, lightweight SVG icon library providing all the scalable icons used throughout the dashboard.
-
-### Backend & Database (BaaS)
-* **Firebase Authentication:** Handles all secure user sign-ups, secure logins, password management, and session tokens.
-* **Firebase Cloud Firestore:** A real-time NoSQL database. Stores all Gyms, Members, Payments, and Attendance records. We heavily utilize **Atomic Transactions** (to securely deduct tokens without race conditions) and **Real-time Listeners** (to push live UI updates).
-
-### Progressive Web App (PWA)
-* **PWA Engine:** The app is configured with a Web Manifest and Service Worker, allowing it to bypass App Stores. It natively prompts users to install and runs directly on the device's hardware like a native iOS or Android app.
-
-### Utilities
-* **html-to-image:** A specialized library used in the Receipt Generator to take HTML receipt cards, convert them into crisp JPEGs, and pass them to the native mobile Web Share API for WhatsApp sharing.
+| Layer | Technologies |
+| :--- | :--- |
+| **Framework** | [Next.js](https://nextjs.org/) (App Router, Server & Client Components) |
+| **UI Library** | [React 19](https://react.dev/) |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) (Strictly Typed) |
+| **Styling** | [Tailwind CSS](https://tailwindcss.com/) & [Lucide Icons](https://lucide.dev/) |
+| **Backend & DB** | [Firebase Authentication](https://firebase.google.com/docs/auth) & [Cloud Firestore](https://firebase.google.com/docs/firestore) |
+| **PWA** | Web App Manifest & Service Worker |
+| **Receipt Generation** | HTML5 Canvas & PDF generation |
 
 ---
 
@@ -75,10 +77,10 @@ This platform is built on a modern, high-performance, and deeply integrated arch
 
 ### 1. Prerequisites
 - Node.js 18+ installed on your machine
-- A free [Firebase Console](https://console.firebase.google.com/) account
+- A [Firebase Console](https://console.firebase.google.com/) project
 
 ### 2. Configure Environment Variables
-Create a `.env.local` file in the root directory and add your Firebase credentials:
+Create a `.env.local` file in the root directory:
 
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
@@ -87,3 +89,86 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
+
+### 3. Install Dependencies & Run Development Server
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🔒 Firestore Security Rules Reference
+
+Paste into **Firebase Console → Firestore Database → Rules**:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email in [
+        'gympaysupport@gmail.com',
+        'your-email@gmail.com'
+      ];
+    }
+
+    function isOwner(gymId) {
+      return request.auth != null && (
+        request.auth.uid == gymId || 
+        (resource != null && resource.data.ownerId == request.auth.uid)
+      );
+    }
+
+    function isStaffOf(gymId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.gymId == gymId;
+    }
+
+    match /staff/{staffId} {
+      allow read: if request.auth != null && (request.auth.uid == staffId || isAdmin());
+      allow create: if request.auth != null && (
+        request.resource.data.gymId == request.auth.uid || isAdmin()
+      );
+      allow update, delete: if request.auth != null && (
+        resource.data.gymId == request.auth.uid || isAdmin()
+      );
+    }
+
+    match /gyms/{gymId} {
+      allow create: if request.auth != null;
+      allow read: if isOwner(gymId) || isStaffOf(gymId) || isAdmin();
+      allow update, delete: if isOwner(gymId) || isAdmin();
+
+      match /staff/{staffMemberId} {
+        allow read, write, delete: if isOwner(gymId) || isAdmin();
+      }
+
+      match /members/{memberId} {
+        allow read, write: if isOwner(gymId) || isStaffOf(gymId) || isAdmin();
+        allow delete: if isOwner(gymId) || isAdmin();
+      }
+
+      match /payments/{paymentId} {
+        allow read, write: if isOwner(gymId) || isStaffOf(gymId) || isAdmin();
+      }
+
+      match /attendance/{attendanceId} {
+        allow read, write: if isOwner(gymId) || isStaffOf(gymId) || isAdmin();
+      }
+    }
+  }
+}
+```
+
+---
+
+## 📄 License
+
+Proprietary © ActiPay Fitness Technologies. All rights reserved.

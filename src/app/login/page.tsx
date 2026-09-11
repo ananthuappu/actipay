@@ -88,7 +88,7 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-            Manage gym members, dues, and staff without fixed monthly fees.
+            Manage gym members, dues, and staff without fixed software waste.
           </h2>
 
           <div className="space-y-4 pt-2">
@@ -121,9 +121,9 @@ export default function LoginPage() {
                 <Zap className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-100">Smart Pay-Per-Active AMC Wallet</p>
+                <p className="text-sm font-bold text-slate-100">Starter from ₹299 or Flat ₹599/mo</p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Never pay monthly software fees during off-seasons. 30-day Free Trial included.
+                  Start pay-as-you-go and switch to flat pricing anytime. 30-day Free Trial included.
                 </p>
               </div>
             </div>
