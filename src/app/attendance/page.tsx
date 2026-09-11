@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
+import TrialBanner from "@/components/TrialBanner";
 import {
   UserCheck,
   Search,
@@ -154,21 +155,21 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto bg-slate-50">
+    <div className="min-h-screen pb-24 max-w-5xl mx-auto bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 shadow-xs">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="font-bold text-lg text-slate-900 leading-tight">Daily Attendance</h1>
-            <p className="text-[11px] text-slate-500 font-medium">{gym?.name || "Gym"}</p>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
-            <UserCheck className="h-3.5 w-3.5" />
-            <span>{attendanceList.length} Present</span>
-          </div>
+      <header className="px-4 pt-6 pb-2 flex items-start justify-between md:pt-10">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">Daily Attendance</h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">{gym?.name || "Gym"}</p>
+        </div>
+        <div className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+          <UserCheck className="h-4 w-4" />
+          <span>{attendanceList.length} Present</span>
         </div>
       </header>
       
+      {/* Top Notification Banners */}
+      <TrialBanner />
       <RechargeBanner />
 
       {/* Hardware / Biometric Ready Banner */}
@@ -206,11 +207,12 @@ export default function AttendancePage() {
       </div>
 
       {/* Today's Punch List */}
-      <main className="px-4 space-y-2 pt-1">
+      <main className="px-4 pt-1">
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
           Members Check-in ({filteredMembers.length})
         </h2>
 
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
         {filteredMembers.map((member) => {
           const isCheckedIn = checkedInMemberIds.has(member.id);
           const attendanceRecord = attendanceList.find((a) => a.memberId === member.id);
@@ -259,6 +261,7 @@ export default function AttendancePage() {
             </div>
           );
         })}
+        </div>
       </main>
 
       {/* Persistent Bottom Navigation */}

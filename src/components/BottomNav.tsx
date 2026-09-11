@@ -49,23 +49,36 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-6 left-4 right-4 z-40 max-w-sm mx-auto">
-        <div className="bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-4 py-3 flex items-center justify-between border border-slate-100">
+      <nav className="fixed bottom-6 left-4 right-4 z-40 max-w-sm md:max-w-md mx-auto">
+        <div className="bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] px-4 py-2 flex items-center justify-between border border-slate-100">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href ? pathname === item.href : false;
 
-            const activeClasses = "bg-blue-600 text-white shadow-md shadow-blue-200/50";
-            const inactiveClasses = "text-slate-400 hover:bg-slate-50 hover:text-slate-600";
+            const activeIconBg = "bg-[#e0e7ff] text-[#4f46e5]";
+            const inactiveIconBg = "bg-transparent text-slate-400";
             
-            const classes = `flex items-center justify-center h-12 w-12 rounded-full transition-all duration-300 active:scale-95 ${
-              isActive ? activeClasses : inactiveClasses
-            }`;
+            const content = (
+              <>
+                <div className={`flex items-center justify-center h-8 w-12 rounded-2xl transition-all duration-300 ${
+                  isActive ? activeIconBg : inactiveIconBg
+                }`}>
+                  <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
+                </div>
+                <span className={`text-[9px] mt-1 font-bold ${
+                  isActive ? "text-[#4f46e5]" : "text-slate-400"
+                }`}>
+                  {item.label}
+                </span>
+              </>
+            );
+
+            const classes = "flex flex-col items-center justify-center px-1 active:scale-95 transition-transform";
 
             if (item.isAction) {
               return (
                 <button key={item.label} onClick={item.onClick} className={classes}>
-                  <Icon className={`h-6 w-6 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
+                  {content}
                 </button>
               );
             }
@@ -73,14 +86,14 @@ export default function BottomNav() {
             if (item.isExternal && item.href) {
               return (
                 <a key={item.label} href={item.href} className={classes}>
-                  <Icon className={`h-6 w-6 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
+                  {content}
                 </a>
               );
             }
 
             return (
               <Link key={item.label} href={item.href || "#"} className={classes}>
-                <Icon className={`h-6 w-6 ${isActive ? "stroke-[2.5]" : "stroke-[2]"}`} />
+                {content}
               </Link>
             );
           })}

@@ -137,6 +137,35 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleSubscriptionPlan = async (
+    gymId: string,
+    gymName: string,
+    currentPlan: "TRIAL" | "PAID" | undefined
+  ) => {
+    const newPlan: "TRIAL" | "PAID" = currentPlan === "PAID" ? "TRIAL" : "PAID";
+    if (!confirm(`Change ${gymName}'s subscription plan to ${newPlan}?`)) return;
+
+    setUpdatingGymId(gymId);
+    try {
+      const gymRef = doc(db, COLLECTIONS.GYMS, gymId);
+      await updateDoc(gymRef, {
+        subscriptionPlan: newPlan,
+      });
+
+      setGyms((prev) =>
+        prev.map((g) => (g.gymId === gymId ? { ...g, subscriptionPlan: newPlan } : g))
+      );
+
+      setStatusMessage(`Updated ${gymName} to ${newPlan} account`);
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (error: any) {
+      console.error("Failed to update subscription plan:", error);
+      alert("Error: " + error.message);
+    } finally {
+      setUpdatingGymId(null);
+    }
+  };
+
   // 2. Expired Trial Cleanup Logic
   const now = Date.now();
   const EXPIRED_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -218,7 +247,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 pb-20 pt-6 px-4 max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-transparent pb-20 pt-6 px-4 max-w-4xl mx-auto space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -303,9 +332,9 @@ export default function AdminPage() {
         </div>
 
         {/* Gym List */}
-        <div className="space-y-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {filteredGyms.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300 text-slate-500 text-xs">
+            <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300 text-slate-500 text-xs">
               No gyms found matching your query.
             </div>
           ) : (
@@ -321,16 +350,23 @@ export default function AdminPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <Building2 className="h-4 w-4 text-slate-400" />
                         <h3 className="font-bold text-sm text-slate-900">{gym.name}</h3>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest ml-1 ${
-                          gym.subscriptionPlan === "PAID" 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : "bg-amber-100 text-amber-700"
-                        }`}>
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() => handleToggleSubscriptionPlan(gym.gymId, gym.name, gym.subscriptionPlan)}
+                          title={`Click to switch to ${gym.subscriptionPlan === "PAID" ? "TRIAL" : "PAID"}`}
+                          className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ml-1 border transition-all active:scale-95 flex items-center gap-1 cursor-pointer disabled:opacity-50 ${
+                            gym.subscriptionPlan === "PAID" 
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200" 
+                              : "bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200"
+                          }`}
+                        >
                           {gym.subscriptionPlan || "TRIAL"}
-                        </span>
+                          <span className="text-[8px] font-normal opacity-75 underline">⇄ Switch</span>
+                        </button>
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
                         <span className="flex items-center gap-1">

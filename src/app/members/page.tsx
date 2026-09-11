@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
+import TrialBanner from "@/components/TrialBanner";
 import {
   Users,
   Search,
@@ -274,15 +275,19 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto bg-slate-50">
+    <div className="min-h-screen pb-24 max-w-5xl mx-auto bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 shadow-xs">
-        <h1 className="font-bold text-lg text-slate-900 leading-tight">Member Management</h1>
-        <p className="text-[11px] text-slate-500 font-medium">
-          {gym?.name || "Gym"} Directory & Retention
-        </p>
+      <header className="px-4 pt-6 pb-2 flex items-start justify-between md:pt-10">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">Member Management</h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
+            {gym?.name || "Gym"} Directory & Retention
+          </p>
+        </div>
       </header>
       
+      {/* Top Notification Banners */}
+      <TrialBanner />
       <RechargeBanner />
 
       {/* Filter Tabs */}
@@ -341,9 +346,9 @@ export default function MembersPage() {
       </div>
 
       {/* Members List */}
-      <main className="px-4 space-y-2.5">
+      <main className="px-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filteredMembers.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
+          <div className="col-span-full text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
             <Users className="h-6 w-6 text-slate-300 mx-auto mb-1" />
             <p className="text-xs font-medium text-slate-500">
               {statusFilter === "ABSENT"

@@ -41,6 +41,9 @@ import {
   Trash2,
   AlertTriangle,
   Settings,
+  Banknote,
+  Download,
+  Search,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -49,6 +52,7 @@ export default function DashboardPage() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [filter, setFilter] = useState<"ALL" | "DUE_SOON" | "OVERDUE">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -483,9 +487,22 @@ export default function DashboardPage() {
 
   const filteredMembers = members.filter((m) => {
     const status = getStatus(m.nextDueDate).label;
-    if (filter === "OVERDUE") return status.startsWith("OVERDUE");
-    if (filter === "DUE_SOON") return status === "DUE SOON" || status.startsWith("OVERDUE");
-    return true;
+    const matchesFilter =
+      filter === "ALL"
+        ? true
+        : filter === "OVERDUE"
+        ? status.startsWith("OVERDUE")
+        : filter === "DUE_SOON"
+        ? status === "DUE SOON" || status.startsWith("OVERDUE")
+        : true;
+
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !query ||
+      m.fullName.toLowerCase().includes(query) ||
+      m.phone.includes(query);
+
+    return matchesFilter && matchesSearch;
   });
 
   const totalActive = members.length;
@@ -502,108 +519,192 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto bg-slate-50">
-      {/* Mobile Sticky Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-xs">
+    <div className="min-h-screen pb-24 max-w-5xl mx-auto bg-transparent">
+      {/* Header */}
+      <header className="px-4 pt-6 pb-2 flex items-start justify-between md:pt-10">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-bold text-lg text-slate-900 leading-tight">
-              {gym?.name || "ActiPay Fitness"}
-            </h1>
-            <div className={`px-1.5 py-0.5 text-[10px] font-bold uppercase rounded ${
+          <h1 className="text-2xl md:text-3xl text-slate-900 flex items-center gap-2">
+            <span className="font-semibold">{gym?.name || "ActiPay"}</span>
+          </h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium mt-1 flex items-center gap-2">
+            Dashboard
+            <span className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded ${
               (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
             }`}>
               {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
-            </div>
-            <button 
-              onClick={() => setIsRechargeModalOpen(true)}
-              className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded shadow-sm hover:bg-blue-700 transition"
-            >
-              Recharge
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Dashboard</p>
+            </span>
+          </p>
         </div>
+
+        {/* Header Actions (Delete Account & Sign Out) */}
         <div className="flex items-center gap-1">
           <button
+            onClick={() => setIsDeleteAccountModalOpen(true)}
+            className="p-2 text-slate-400 hover:text-red-600 transition rounded-xl hover:bg-red-50"
+            title="Delete Gym Account"
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 transition rounded-xl hover:bg-slate-100"
+            title="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Top Notification Banners */}
+      <TrialBanner />
+      <RechargeBanner />
+
+      {/* Quick Actions (Skyline Style) */}
+      <section className="px-4 mt-4 mb-8">
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-6 md:gap-8">
+          <button 
+            onClick={() => {
+              if ((gym?.walletBalance || 0) === 0) {
+                setRechargeReason(
+                  "Your wallet is empty. You need at least 1 AMC to add a member."
+                );
+                setIsRechargeModalOpen(true);
+              } else {
+                setIsAddModalOpen(true);
+              }
+            }}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-blue-600 rounded-2xl md:rounded-3xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20 active:scale-95 transition">
+              <Users className="h-6 w-6 md:h-7 md:w-7" />
+            </div>
+            <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wide">ADD</span>
+          </button>
+
+          <button 
+            onClick={() => setFilter("DUE_SOON")}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-[#1e293b] rounded-2xl md:rounded-3xl flex items-center justify-center text-white shadow-lg shadow-slate-900/20 active:scale-95 transition">
+              <Banknote className="h-6 w-6 md:h-7 md:w-7" />
+            </div>
+            <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wide">Collect</span>
+          </button>
+
+          <button 
+            onClick={() => setIsRechargeModalOpen(true)}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-emerald-500 rounded-2xl md:rounded-3xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition">
+              <Download className="h-6 w-6 md:h-7 md:w-7" />
+            </div>
+            <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wide">Recharge</span>
+          </button>
+
+          <button 
             onClick={() => {
               setEditName(gym?.name || "");
               setEditPhone(gym?.phone || "");
               setIsEditProfileModalOpen(true);
             }}
-            className="p-2 text-slate-400 hover:text-blue-600 transition rounded-lg hover:bg-blue-50"
-            title="Edit Gym Profile"
+            className="flex flex-col items-center gap-2 group"
           >
-            <Settings className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setIsDeleteAccountModalOpen(true)}
-            className="p-2 text-slate-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
-            title="Delete Gym Account"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={logout}
-            className="p-2 text-slate-500 hover:text-red-600 transition rounded-lg hover:bg-slate-100"
-            title="Sign Out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      <TrialBanner />
-      <RechargeBanner />
-
-      {/* Metrics Section */}
-      <section className="p-4 grid grid-cols-3 gap-2">
-        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs relative">
-          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold mb-1">
-            <Users className="h-3.5 w-3.5 text-blue-600" /> Active
-          </div>
-          <p className="text-xl font-bold text-slate-900">{totalActive}</p>
-          {ptCount > 0 && (
-            <div className="absolute top-3 right-3 text-[9px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded uppercase">
-              {ptCount} PT
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-indigo-500 rounded-2xl md:rounded-3xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 active:scale-95 transition">
+              <Settings className="h-6 w-6 md:h-7 md:w-7" />
             </div>
-          )}
-        </div>
-        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs">
-          <div className="flex items-center gap-1.5 text-amber-600 text-xs font-semibold mb-1">
-            <Clock className="h-3.5 w-3.5" /> Due Soon
-          </div>
-          <p className="text-xl font-bold text-amber-600">{dueSoonCount}</p>
-        </div>
-        <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-xs">
-          <div className="flex items-center gap-1.5 text-red-600 text-xs font-semibold mb-1">
-            <AlertCircle className="h-3.5 w-3.5" /> Overdue
-          </div>
-          <p className="text-xl font-bold text-red-600">{overdueCount}</p>
+            <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wide">Profile</span>
+          </button>
         </div>
       </section>
 
-      {/* Filter Tabs */}
-      <div className="px-4 flex gap-2">
-        {(["ALL", "DUE_SOON", "OVERDUE"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition ${
-              filter === tab
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            {tab === "ALL" ? "All" : tab === "DUE_SOON" ? "Due Soon" : "Overdue"}
-          </button>
-        ))}
+      {/* Metrics Section */}
+      <section className="px-4 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mb-8">
+        <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Active Members</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{totalActive}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">Currently active</p>
+        </div>
+        
+        <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">PT Enrolled</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{ptCount}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">Personal training</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Due Soon</p>
+          <p className="text-2xl font-black text-blue-600 mt-1">{dueSoonCount}</p>
+          <p className="text-[10px] text-blue-600/70 mt-0.5">Expiring in 5 days</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Overdue</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{overdueCount}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">Needs attention</p>
+        </div>
+      </section>
+
+      {/* Urgent Actions */}
+      {overdueCount > 0 && (
+        <section className="px-4 mb-6">
+          <h2 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest mb-3">Urgent Actions</h2>
+          <div className="bg-[#fceef0] p-4 rounded-3xl shadow-sm border border-[#fad3d8] flex gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-bold text-[#b91c1c]">Pending Renewals ({overdueCount})</h3>
+              <p className="text-xs text-[#b91c1c]/80 mt-0.5">
+                There are {overdueCount} members whose memberships have expired and need attention.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Search & Filter Section */}
+      <div className="px-4 space-y-3 mb-2">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search member name or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-9 py-2.5 bg-white rounded-2xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
+              title="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2">
+          {(["ALL", "DUE_SOON", "OVERDUE"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`flex-1 py-2 text-xs font-semibold rounded-xl border transition ${
+                filter === tab
+                  ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {tab === "ALL" ? "All" : tab === "DUE_SOON" ? "Due Soon" : "Overdue"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Member Cards List */}
-      <main className="p-4 space-y-3">
+      <main className="p-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredMembers.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 p-6">
+          <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-dashed border-slate-300 p-6">
             <Users className="h-8 w-8 text-slate-400 mx-auto mb-2" />
             <p className="text-sm font-semibold text-slate-700">No members found</p>
             <p className="text-xs text-slate-500 mt-1">
@@ -686,23 +787,7 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* Floating Action Button (Add Member) */}
-      <button
-        onClick={() => {
-          if ((gym?.walletBalance || 0) === 0) {
-            setRechargeReason(
-              "Your wallet is empty. You need at least 1 AMC to add a member."
-            );
-            setIsRechargeModalOpen(true);
-          } else {
-            setIsAddModalOpen(true);
-          }
-        }}
-        className="fixed bottom-32 right-6 z-30 h-14 w-14 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition active:scale-90"
-        title="Add Member"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+
 
       {/* MODAL: Add Member */}
       {isAddModalOpen && (

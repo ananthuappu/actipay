@@ -9,6 +9,7 @@ import { PaymentRecord } from "@/types";
 import { collection, getDocs, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import BottomNav from "@/components/BottomNav";
 import RechargeBanner from "@/components/RechargeBanner";
+import TrialBanner from "@/components/TrialBanner";
 import {
   IndianRupee,
   TrendingUp,
@@ -264,17 +265,19 @@ export default function PaymentsPage() {
   const advancePct = (stats.advanceTotal / splitTotal) * 100;
 
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto bg-slate-50">
+    <div className="min-h-screen pb-24 max-w-5xl mx-auto bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 shadow-xs">
-        <h1 className="font-bold text-lg text-slate-900 leading-tight">
-          Payment Analytics
-        </h1>
-        <p className="text-[11px] text-slate-500 font-medium">
-          Revenue overview for {gym?.name || "Gym"}
-        </p>
+      <header className="px-4 pt-6 pb-2 flex items-start justify-between md:pt-10">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 leading-tight">Payment Analytics</h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
+            Revenue overview for {gym?.name || "Gym"}
+          </p>
+        </div>
       </header>
       
+      {/* Top Notification Banners */}
+      <TrialBanner />
       <RechargeBanner />
 
       <section className="p-4 space-y-4">
@@ -478,9 +481,9 @@ export default function PaymentsPage() {
         </div>
 
         {/* Transactions List */}
-        <div className="space-y-2 pt-1">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 pt-1">
           {filteredPayments.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
+            <div className="col-span-full text-center py-8 bg-white rounded-3xl border border-dashed border-slate-200 p-4">
               <IndianRupee className="h-6 w-6 text-slate-300 mx-auto mb-1" />
               <p className="text-xs font-medium text-slate-500">No payment records found.</p>
             </div>

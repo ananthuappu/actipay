@@ -39,7 +39,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/api/icon" />
       </head>
-      <body className={`${nunito.className} bg-slate-50 text-slate-900 min-h-screen antialiased select-none`}>
+      <body className={`${nunito.className} bg-gradient-to-br from-white via-blue-50/50 to-blue-200 bg-fixed min-h-screen text-slate-900 antialiased select-none`}>
         <AuthProvider>
           {children}
           <PwaInstallPrompt />
