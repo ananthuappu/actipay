@@ -9,7 +9,8 @@ export default function RechargeBanner() {
   const { gym } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  if (!gym) return null;
+  // Recharge banner is exclusively for paid accounts managing AMC credits
+  if (!gym || gym.subscriptionPlan !== "PAID") return null;
 
   const balance = gym.walletBalance || 0;
 

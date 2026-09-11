@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { db, firebaseConfig } from "@/lib/firebase";
-import { COLLECTIONS, PLAN_DURATIONS, isGymTrialExpired } from "@/lib/constants";
+import { COLLECTIONS, PLAN_DURATIONS, TRIAL_MEMBER_LIMIT, isGymTrialExpired } from "@/lib/constants";
 import { Member, PlanType, PaymentMode, StaffProfile } from "@/types";
 import { initializeApp, getApps } from "firebase/app";
 import {
@@ -316,6 +316,18 @@ export default function DashboardPage() {
       return;
     }
 
+    const isTrial = gym?.subscriptionPlan !== "PAID";
+
+    if (isTrial) {
+      // Hard cap: 50 active members during trial
+      const activeCount = members.filter((m) => m.isActive !== false).length;
+      if (activeCount >= TRIAL_MEMBER_LIMIT) {
+        setRechargeReason("You've reached the 50-member trial limit. Upgrade to add more members.");
+        setIsRechargeModalOpen(true);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     const requiredAmcs = PLAN_DURATIONS[newPlan.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
@@ -337,31 +349,15 @@ export default function DashboardPage() {
     };
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
-        const gymDoc = await transaction.get(gymRef);
-        
-        if (!gymDoc.exists()) {
-          throw new Error("Gym document not found");
-        }
-        
-        const currentBalance = gymDoc.data().walletBalance || 0;
-        
-        if (currentBalance < requiredAmcs) {
-          throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
-        }
-
-        // 1. Generate refs
+      if (isTrial) {
+        // Trial accounts: zero AMC deduction, direct batch creation
+        const batch = writeBatch(db);
         const memberRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS));
-        const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
-        const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+        batch.set(memberRef, memberData);
 
-        // 2. Set Member
-        transaction.set(memberRef, memberData);
-
-        // 3. Log Admission Fee (if any)
         if (admissionFeeNum > 0) {
-          transaction.set(admissionPaymentRef, {
+          const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+          batch.set(admissionPaymentRef, {
             memberId: memberRef.id,
             memberName: `${newFullName.trim()} (Admission / Advance)`,
             memberPhone: memberData.phone,
@@ -376,8 +372,8 @@ export default function DashboardPage() {
           });
         }
 
-        // 4. Log Membership Fee
-        transaction.set(membershipPaymentRef, {
+        const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+        batch.set(membershipPaymentRef, {
           memberId: memberRef.id,
           memberName: newFullName.trim(),
           memberPhone: memberData.phone,
@@ -391,11 +387,64 @@ export default function DashboardPage() {
           createdAt: new Date().toISOString(),
         });
 
-        // 5. Deduct AMCs
-        transaction.update(gymRef, {
-          walletBalance: currentBalance - requiredAmcs
+        await batch.commit();
+      } else {
+        // Paid accounts: AMC credit consumption logic
+        await runTransaction(db, async (transaction) => {
+          const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
+          const gymDoc = await transaction.get(gymRef);
+          
+          if (!gymDoc.exists()) {
+            throw new Error("Gym document not found");
+          }
+          
+          const currentBalance = gymDoc.data().walletBalance || 0;
+          
+          if (currentBalance < requiredAmcs) {
+            throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
+          }
+
+          const memberRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS));
+          const admissionPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+          const membershipPaymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+
+          transaction.set(memberRef, memberData);
+
+          if (admissionFeeNum > 0) {
+            transaction.set(admissionPaymentRef, {
+              memberId: memberRef.id,
+              memberName: `${newFullName.trim()} (Admission / Advance)`,
+              memberPhone: memberData.phone,
+              amount: admissionFeeNum,
+              paymentMode: "UPI",
+              category: "ADMISSION",
+              paymentDate: newStartDate,
+              validFrom: newStartDate,
+              validUntil: "-",
+              loggedBy: user.uid,
+              createdAt: new Date().toISOString(),
+            });
+          }
+
+          transaction.set(membershipPaymentRef, {
+            memberId: memberRef.id,
+            memberName: newFullName.trim(),
+            memberPhone: memberData.phone,
+            amount: planFeeNum,
+            paymentMode: "UPI",
+            category: "MEMBERSHIP",
+            paymentDate: newStartDate,
+            validFrom: newStartDate,
+            validUntil: calculatedDueDate,
+            loggedBy: user.uid,
+            createdAt: new Date().toISOString(),
+          });
+
+          transaction.update(gymRef, {
+            walletBalance: currentBalance - requiredAmcs
+          });
         });
-      });
+      }
 
       setIsAddModalOpen(false);
       setNewFullName("");
@@ -448,6 +497,7 @@ export default function DashboardPage() {
     }
 
     setIsSubmitting(true);
+    const isTrial = gym?.subscriptionPlan !== "PAID";
     const requiredAmcs = PLAN_DURATIONS[planExtension.toUpperCase() as keyof typeof PLAN_DURATIONS] || 1;
 
     const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
@@ -455,24 +505,13 @@ export default function DashboardPage() {
     const newDueDate = calculateNextDueDate(baseDate, planExtension, selectedMember.startDate);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
-        const gymDoc = await transaction.get(gymRef);
-        
-        if (!gymDoc.exists()) {
-          throw new Error("Gym document not found");
-        }
-        
-        const currentBalance = gymDoc.data().walletBalance || 0;
-        
-        if (currentBalance < requiredAmcs) {
-          throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
-        }
-
+      if (isTrial) {
+        // Trial accounts: payments and renewals are unrestricted without AMC deduction
+        const batch = writeBatch(db);
         const paymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
         const memberRef = doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, selectedMember.id);
 
-        transaction.set(paymentRef, {
+        batch.set(paymentRef, {
           memberId: selectedMember.id,
           memberName: selectedMember.fullName,
           memberPhone: selectedMember.phone,
@@ -486,16 +525,57 @@ export default function DashboardPage() {
           createdAt: new Date().toISOString(),
         });
 
-        transaction.update(memberRef, {
+        batch.update(memberRef, {
           nextDueDate: newDueDate,
           planType: planExtension,
           isActive: true,
         });
 
-        transaction.update(gymRef, {
-          walletBalance: currentBalance - requiredAmcs
+        await batch.commit();
+      } else {
+        // Paid accounts: AMC consumption logic
+        await runTransaction(db, async (transaction) => {
+          const gymRef = doc(db, COLLECTIONS.GYMS, currentGymId);
+          const gymDoc = await transaction.get(gymRef);
+          
+          if (!gymDoc.exists()) {
+            throw new Error("Gym document not found");
+          }
+          
+          const currentBalance = gymDoc.data().walletBalance || 0;
+          
+          if (currentBalance < requiredAmcs) {
+            throw new Error(`INSUFFICIENT_FUNDS:${currentBalance}`);
+          }
+
+          const paymentRef = doc(collection(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.PAYMENTS));
+          const memberRef = doc(db, COLLECTIONS.GYMS, currentGymId, COLLECTIONS.MEMBERS, selectedMember.id);
+
+          transaction.set(paymentRef, {
+            memberId: selectedMember.id,
+            memberName: selectedMember.fullName,
+            memberPhone: selectedMember.phone,
+            amount: Number(paymentAmount),
+            paymentMode,
+            category: "RENEWAL",
+            paymentDate: today,
+            validFrom: baseDate,
+            validUntil: newDueDate,
+            loggedBy: user.uid,
+            createdAt: new Date().toISOString(),
+          });
+
+          transaction.update(memberRef, {
+            nextDueDate: newDueDate,
+            planType: planExtension,
+            isActive: true,
+          });
+
+          transaction.update(gymRef, {
+            walletBalance: currentBalance - requiredAmcs
+          });
         });
-      });
+      }
 
       setIsPaymentModalOpen(false);
       setSelectedMember(null);
@@ -669,11 +749,17 @@ export default function DashboardPage() {
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium mt-1 flex items-center gap-2">
             Dashboard
-            <span className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded ${
-              (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
-            }`}>
-              {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
-            </span>
+            {gym?.subscriptionPlan === "PAID" ? (
+              <span className={`px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded ${
+                (gym?.walletBalance || 0) < 5 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+              }`}>
+                {gym?.walletBalance || 0} AMC{gym?.walletBalance === 1 ? "" : "s"}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 text-[9px] md:text-[10px] font-bold uppercase rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                Free Trial: {members.filter((m) => m.isActive !== false).length}/{TRIAL_MEMBER_LIMIT} Members
+              </span>
+            )}
           </p>
         </div>
 
@@ -715,13 +801,26 @@ export default function DashboardPage() {
                 setIsRechargeModalOpen(true);
                 return;
               }
-              if ((gym?.walletBalance || 0) === 0) {
-                setRechargeReason(
-                  "Your wallet is empty. You need at least 1 AMC to add a member."
-                );
-                setIsRechargeModalOpen(true);
-              } else {
+              const isTrial = gym?.subscriptionPlan !== "PAID";
+              if (isTrial) {
+                const activeCount = members.filter((m) => m.isActive !== false).length;
+                if (activeCount >= TRIAL_MEMBER_LIMIT) {
+                  setRechargeReason(
+                    "You've reached the 50-member trial limit. Upgrade to add more members."
+                  );
+                  setIsRechargeModalOpen(true);
+                  return;
+                }
                 setIsAddModalOpen(true);
+              } else {
+                if ((gym?.walletBalance || 0) === 0) {
+                  setRechargeReason(
+                    "Your wallet is empty. You need at least 1 AMC to add a member."
+                  );
+                  setIsRechargeModalOpen(true);
+                } else {
+                  setIsAddModalOpen(true);
+                }
               }
             }}
             className="flex flex-col items-center gap-2 group"

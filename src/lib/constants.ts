@@ -18,6 +18,7 @@ export const PLAN_DURATIONS = {
 
 export const TRIAL_DURATION_DAYS = 30;
 export const TRIAL_DURATION_MS = TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000;
+export const TRIAL_MEMBER_LIMIT = 50;
 
 export function isGymTrialExpired(gym: any): boolean {
   if (!gym) return false;
@@ -26,6 +27,11 @@ export function isGymTrialExpired(gym: any): boolean {
   const createdAt = new Date(gym.createdAt).getTime();
   const now = Date.now();
   return (now - createdAt) > TRIAL_DURATION_MS;
+}
+
+export function isGymInTrial(gym: any): boolean {
+  if (!gym) return false;
+  return gym.subscriptionPlan !== "PAID";
 }
 
 export function getTrialDaysRemaining(gym: any): number {

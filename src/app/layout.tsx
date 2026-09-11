@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "ActiPay Fitness - Member & Payment Tracker",
-  description: "Stop paying flat SaaS fees. Pay only for active customers with ActiPay.",
+  description: "Stop paying fixed monthly fees. Pay only for active customers with ActiPay.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

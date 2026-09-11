@@ -23,10 +23,10 @@ export default function TrialBanner() {
       <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
       <div className="flex-1">
         <p className="text-xs text-blue-950 font-medium leading-snug">
-          You are currently on the Free Trial. Your data is completely safe with us — recharge with an AMC pack anytime to continue uninterrupted.
+          You are currently on the 30-day Free Trial (up to 50 members). All features, attendance, and payments are unrestricted.
         </p>
         <p className="text-[10px] font-bold text-blue-700 mt-1 uppercase tracking-wider">
-          {daysLeft > 0 ? `${daysLeft} Days Remaining in Trial` : "Trial Completed • Recharge Anytime"}
+          {daysLeft > 0 ? `${daysLeft} Days Remaining in Free Trial • 50 Member Cap` : "Trial Completed • Recharge Anytime"}
         </p>
       </div>
     </div>
